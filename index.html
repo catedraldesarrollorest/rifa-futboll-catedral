@@ -51,6 +51,36 @@ body::before {
 /* ══════════════════════════════════════
    STEP 1 – BIENVENIDA
 ══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   ADMIN PANEL BUTTON
+══════════════════════════════════════ */
+.admin-badge {
+  position: fixed; bottom: 20px; right: 20px;
+  display: none;
+  z-index: 200;
+}
+.admin-badge.visible { display: block; }
+.admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #c9a84c, #8a6a20);
+  border: 1px solid #c9a84c;
+  border-radius: 12px;
+  color: #0a0a08;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+}
+.admin-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.5);
+}
+
 #step1 {
   align-items: center;
   justify-content: center;
@@ -594,6 +624,13 @@ h1.main-title span { color: var(--oro); }
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:25%"></div></div>
 <button class="back-btn" id="backBtn" onclick="goBack()">←</button>
 
+<!-- ADMIN BADGE -->
+<div class="admin-badge" id="adminBadge">
+  <a class="admin-btn" id="adminLink" href="#">
+    🔐 PANEL ADMIN
+  </a>
+</div>
+
 <div class="page">
 
 <!-- ══ STEP 1: BIENVENIDA ══ -->
@@ -773,12 +810,33 @@ const CONFIG = {
   group:  "H",
 };
 
+// ── ADMIN CONFIG ────────────────────────────────────────────────────
+const ADMIN_PHONES = ['+5358416293', '+5355162840']; // Amalia, Abelito
+const ADMIN_BOT_PHONE = '34622123456'; // Número del bot (ajusta según corresponda)
+
 // ── STATE ──────────────────────────────────────────────────────────
 let currentStep = 1;
 let joinedWa = false, joinedIg = false;
 let selectedVote = null;
 const steps = [null, 'step1','step2','step3','step4'];
 const progress = [null, 25, 50, 75, 100];
+
+// ── ADMIN DETECTION ───────────────────────────────────────────────
+function checkAdminAccess() {
+  // Intenta obtener el phone del localStorage o parámetro URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const phone = urlParams.get('phone') || localStorage.getItem('visitor_phone');
+
+  if (phone && ADMIN_PHONES.includes(phone)) {
+    const badge = document.getElementById('adminBadge');
+    badge.classList.add('visible');
+
+    const adminLink = document.getElementById('adminLink');
+    const msg = 'Hola, soy admin de la Rifa Futbolera';
+    const waLink = `https://wa.me/${ADMIN_BOT_PHONE}?text=${encodeURIComponent(msg)}`;
+    adminLink.href = waLink;
+  }
+}
 
 // ── INIT ──────────────────────────────────────────────────────────
 (function init(){
@@ -802,6 +860,9 @@ const progress = [null, 25, 50, 75, 100];
 
   document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
   document.getElementById('tkt-prize').textContent  = CONFIG.prize;
+
+  // Verifica acceso admin
+  checkAdminAccess();
 })();
 
 // ── NAVEGACIÓN ────────────────────────────────────────────────────
