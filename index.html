@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Rifa Futbolera · La Catedral</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --negro: #0a0a08;
+  --crema: #f5f0e8;
+  --oro: #c9a84c;
+  --oro-claro: #e8c96a;
+  --oro-dark: #8a6a20;
+  --rojo: #8b1a1a;
+  --verde-wa: #25D366;
+  --rosa-ig: #e1306c;
+  --text: #1a1a16;
+  --muted: #7a7060;
+  --border: rgba(201,168,76,0.25);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--negro);
+  color: var(--crema);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── FONDO TEXTURA ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(ellipse at 15% 20%, rgba(201,168,76,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 80%, rgba(139,26,26,0.10) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page { position: relative; z-index: 1; }
+
+/* ── STEPS ── */
+.step { display: none; min-height: 100vh; flex-direction: column; }
+.step.active { display: flex; }
+
+/* ══════════════════════════════════════
+   STEP 1 – BIENVENIDA
+══════════════════════════════════════ */
+#step1 {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.logo-ring {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  border: 2px solid var(--oro);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 0 30px rgba(201,168,76,0.3), inset 0 0 20px rgba(201,168,76,0.05);
+  animation: pulse-ring 3s infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { box-shadow: 0 0 30px rgba(201,168,76,0.3), inset 0 0 20px rgba(201,168,76,0.05); }
+  50% { box-shadow: 0 0 50px rgba(201,168,76,0.5), inset 0 0 30px rgba(201,168,76,0.1); }
+}
+.logo-ring .ball { font-size: 2.8rem; }
+
+.tagline-top {
+  font-size: 0.7rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--oro);
+  margin-bottom: 6px;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.1s forwards;
+}
+
+h1.main-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 9vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--crema);
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.2s forwards;
+}
+h1.main-title span { color: var(--oro); }
+
+.subtitle {
+  font-size: 1rem;
+  color: rgba(245,240,232,0.6);
+  margin-bottom: 32px;
+  font-weight: 300;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.3s forwards;
+}
+
+/* PRIZE HIGHLIGHT */
+.prize-box {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  max-width: 340px;
+  width: 100%;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.4s forwards;
+}
+.prize-box .pw { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--oro); margin-bottom: 8px; }
+.prize-box .pv {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--crema);
+}
+.prize-box .pm { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+/* MATCH PREVIEW */
+.match-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 36px;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.5s forwards;
+}
+.mp-team {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--crema);
+  text-align: center;
+  flex: 1;
+}
+.mp-flag { font-size: 1.8rem; display: block; margin-bottom: 3px; }
+.mp-vs {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--oro);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-start {
+  width: 100%;
+  max-width: 340px;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--oro), var(--oro-dark));
+  color: var(--negro);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.35);
+  opacity: 0;
+  animation: fadeUp 0.6s 0.6s forwards;
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.5); }
+.btn-start:active { transform: translateY(0); }
+
+.rules-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 14px;
+  opacity: 0;
+  animation: fadeUp 0.6s 0.7s forwards;
+}
+
+/* ══════════════════════════════════════
+   STEP 2 – ÚNETE
+══════════════════════════════════════ */
+#step2 {
+  padding: 0;
+  flex-direction: column;
+}
+
+.step2-header {
+  background: linear-gradient(180deg, rgba(201,168,76,0.08) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 24px 24px;
+  text-align: center;
+}
+.step-num {
+  font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--oro); margin-bottom: 8px;
+}
+.step2-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 700;
+  margin-bottom: 6px;
+}
+.step2-header p { font-size: 0.85rem; color: rgba(245,240,232,0.6); font-weight: 300; }
+
+.join-body { flex: 1; padding: 28px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.join-card {
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+}
+.join-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: rgba(255,255,255,0.05);
+}
+.join-card:hover::before { opacity: 1; }
+.join-card:hover { transform: translateY(-2px); }
+.join-card:active { transform: translateY(0); }
+
+.jc-wa {
+  background: linear-gradient(135deg, #075e54, #128c7e);
+  box-shadow: 0 4px 24px rgba(37,211,102,0.25);
+}
+.jc-ig {
+  background: linear-gradient(135deg, #833ab4, #e1306c, #f77737);
+  box-shadow: 0 4px 24px rgba(225,48,108,0.25);
+}
+
+.jc-icon { font-size: 2.4rem; flex-shrink: 0; }
+.jc-info { flex: 1; }
+.jc-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 3px; }
+.jc-sub { font-size: 0.78rem; opacity: 0.8; font-weight: 300; }
+.jc-arrow {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* CHECK STATUS */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(245,240,232,0.04);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.check-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.check-icon.done { background: #22c55e; border-color: #22c55e; }
+.check-label { flex: 1; color: rgba(245,240,232,0.7); }
+.check-label.done { color: var(--crema); }
+
+.btn-continue {
+  margin: 8px 24px 32px;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--oro), var(--oro-dark));
+  color: var(--negro);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  opacity: 0.4;
+  pointer-events: none;
+}
+.btn-continue.enabled {
+  opacity: 1;
+  pointer-events: all;
+}
+.btn-continue.enabled:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.5); }
+
+.skip-link {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 24px;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: -16px;
+}
+
+/* ══════════════════════════════════════
+   STEP 3 – VOTA
+══════════════════════════════════════ */
+#step3 { padding: 0; }
+
+.vote-header {
+  padding: 32px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.vote-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 700; margin-bottom: 6px;
+}
+.vote-header p { font-size: 0.82rem; color: rgba(245,240,232,0.6); }
+
+.vote-body { padding: 24px; }
+
+/* MATCH CARD */
+.match-card {
+  background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.02));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.match-league {
+  font-size: 0.62rem; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--oro); margin-bottom: 16px;
+}
+.teams-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.team-col { text-align: center; }
+.team-flag { font-size: 2.8rem; display: block; margin-bottom: 6px; }
+.team-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--crema);
+}
+.vs-circle {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; letter-spacing: 1px; color: var(--oro);
+  flex-shrink: 0;
+  background: rgba(201,168,76,0.05);
+}
+.match-date-row {
+  font-size: 0.72rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.match-date-row span { color: var(--oro); }
+
+/* VOTE OPTIONS */
+.vote-label {
+  font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); text-align: center; margin-bottom: 14px;
+}
+
+.vote-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.vote-btn {
+  padding: 14px 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(245,240,232,0.03);
+  color: var(--crema);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.3;
+}
+.vote-btn .vb-emoji { font-size: 1.4rem; display: block; margin-bottom: 5px; }
+.vote-btn:hover { border-color: var(--oro); background: rgba(201,168,76,0.08); }
+.vote-btn.selected {
+  border-color: var(--oro);
+  background: rgba(201,168,76,0.15);
+  box-shadow: 0 0 20px rgba(201,168,76,0.2);
+  color: var(--oro-claro);
+}
+
+/* FORM */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.form-group input {
+  width: 100%;
+  background: rgba(245,240,232,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--crema);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+.form-group input:focus { outline: none; border-color: var(--oro); }
+.form-group input::placeholder { color: rgba(245,240,232,0.3); }
+
+.btn-vote {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--oro), var(--oro-dark));
+  color: var(--negro);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.35);
+  opacity: 0.4;
+  pointer-events: none;
+  margin-bottom: 12px;
+}
+.btn-vote.enabled { opacity: 1; pointer-events: all; }
+.btn-vote.enabled:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.5); }
+
+.vote-rules {
+  background: rgba(245,240,232,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.vote-rules strong { color: var(--crema); }
+
+/* ══════════════════════════════════════
+   STEP 4 – CONFIRMACIÓN
+══════════════════════════════════════ */
+#step4 {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.confetti-anim {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 16px;
+  animation: pop 0.5s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#step4 h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 900;
+  margin-bottom: 8px;
+}
+#step4 h2 span { color: var(--oro); }
+
+.confirm-name {
+  font-size: 1.2rem; font-weight: 600;
+  color: var(--oro-claro);
+  margin-bottom: 6px;
+}
+.confirm-sub {
+  font-size: 0.85rem;
+  color: rgba(245,240,232,0.6);
+  margin-bottom: 28px;
+  font-weight: 300;
+  max-width: 300px;
+}
+
+.ticket {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.04));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 28px;
+  max-width: 340px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.ticket::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--oro-dark), var(--oro), var(--oro-dark));
+}
+.ticket-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ticket-row:last-child { margin-bottom: 0; padding-top: 12px; border-top: 1px dashed var(--border); }
+.t-label { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.t-value { font-size: 0.9rem; font-weight: 600; color: var(--crema); }
+.t-value.gold { color: var(--oro); }
+
+.sorteo-info {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 28px;
+  max-width: 300px;
+  line-height: 1.6;
+}
+.sorteo-info strong { color: var(--oro); }
+
+.btn-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--crema);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-share:hover { border-color: var(--oro); color: var(--oro); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeUp 0.5s forwards; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 3px; background: rgba(201,168,76,0.15);
+  z-index: 100;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--oro-dark), var(--oro));
+  transition: width 0.4s ease;
+}
+
+/* ── BACK BTN ── */
+.back-btn {
+  position: fixed; top: 16px; left: 16px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(245,240,232,0.08);
+  border: 1px solid var(--border);
+  color: var(--crema);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  z-index: 100;
+  transition: all 0.2s;
+}
+.back-btn:hover { background: rgba(245,240,232,0.14); }
+.back-btn.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- PROGRESS -->
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:25%"></div></div>
+<button class="back-btn" id="backBtn" onclick="goBack()">←</button>
+
+<div class="page">
+
+<!-- ══ STEP 1: BIENVENIDA ══ -->
+<div class="step active" id="step1">
+  <div class="logo-ring"><span class="ball">⚽</span></div>
+  <p class="tagline-top">La Catedral · Mundial 2026</p>
+  <h1 class="main-title">¡Adivina<br><span>& Gana!</span></h1>
+  <p class="subtitle">Vota el resultado, entra al sorteo y gana un premio.</p>
+
+  <div class="prize-box">
+    <div class="pw">🎁 Premio de esta semana</div>
+    <div class="pv" id="s1prize">Cena para 2 personas</div>
+    <div class="pm">Sorteo en directo · Solo para clientes</div>
+  </div>
+
+  <div class="match-preview">
+    <div class="mp-team">
+      <span class="mp-flag" id="s1flag1">🇪🇸</span>
+      <span id="s1team1">España</span>
+    </div>
+    <div class="mp-vs">VS</div>
+    <div class="mp-team">
+      <span class="mp-flag" id="s1flag2">🇦🇷</span>
+      <span id="s1team2">Argentina</span>
+    </div>
+  </div>
+
+  <button class="btn-start" onclick="goStep(2)">¡Quiero participar! →</button>
+  <p class="rules-hint">Gratis · Solo necesitas escanear este QR</p>
+</div>
+
+<!-- ══ STEP 2: ÚNETE ══ -->
+<div class="step" id="step2">
+  <div class="step2-header">
+    <div class="step-num">Paso 1 de 2</div>
+    <h2>Únete a la comunidad</h2>
+    <p>Síguenos para recibir el resultado del sorteo y futuros premios</p>
+  </div>
+
+  <div class="join-body">
+    <a class="join-card jc-wa" href="https://chat.whatsapp.com/BoaqXwjmrjsEPLkzYY3bLI?mode=gi_t" target="_blank" onclick="markJoin('wa')">
+      <span class="jc-icon">💬</span>
+      <div class="jc-info">
+        <div class="jc-title">Grupo de WhatsApp</div>
+        <div class="jc-sub">Recibe los partidos, vota y entérate del ganador</div>
+      </div>
+      <span class="jc-arrow">→</span>
+    </a>
+
+    <a class="join-card jc-ig" href="https://www.instagram.com/lacatedralcuba?igsh=MW9mZnpmdDhjN2Nn" target="_blank" onclick="markJoin('ig')">
+      <span class="jc-icon">📸</span>
+      <div class="jc-info">
+        <div class="jc-title">Instagram</div>
+        <div class="jc-sub">@lacatedralcuba · Novedades, fotos y sorteos en directo</div>
+      </div>
+      <span class="jc-arrow">→</span>
+    </a>
+
+    <!-- Check status -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="check-row" id="check-wa">
+        <div class="check-icon" id="icon-wa"></div>
+        <span class="check-label" id="label-wa">Unirme al grupo de WhatsApp</span>
+      </div>
+      <div class="check-row" id="check-ig">
+        <div class="check-icon" id="icon-ig"></div>
+        <span class="check-label" id="label-ig">Seguir en Instagram</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-continue" id="btnContinue" onclick="goStep(3)">Continuar a votar →</button>
+  <p class="skip-link" onclick="goStep(3)">Ya soy miembro, saltar este paso</p>
+</div>
+
+<!-- ══ STEP 3: VOTA ══ -->
+<div class="step" id="step3">
+  <div class="vote-header">
+    <div class="step-num">Paso 2 de 2</div>
+    <h2>¿Quién gana?</h2>
+    <p>Vota antes de que empiece el partido</p>
+  </div>
+
+  <div class="vote-body">
+    <!-- Match -->
+    <div class="match-card">
+      <div class="match-league">⚽ Copa Mundial FIFA 2026</div>
+      <div class="teams-row">
+        <div class="team-col">
+          <span class="team-flag" id="flag1">🇪🇸</span>
+          <span class="team-name" id="tname1">España</span>
+        </div>
+        <div class="vs-circle">VS</div>
+        <div class="team-col">
+          <span class="team-flag" id="flag2">🇦🇷</span>
+          <span class="team-name" id="tname2">Argentina</span>
+        </div>
+      </div>
+      <div class="match-date-row">
+        📅 <span id="matchDateStr">Hoy · 21:00h</span> · La Catedral
+      </div>
+    </div>
+
+    <!-- Vote -->
+    <p class="vote-label">¿Cuál será el resultado?</p>
+    <div class="vote-options">
+      <button class="vote-btn" onclick="selectVote('home')" id="vb-home">
+        <span class="vb-emoji" id="vb-flag1">🇪🇸</span>
+        <span id="vb-t1">España</span>
+      </button>
+      <button class="vote-btn" onclick="selectVote('draw')" id="vb-draw">
+        <span class="vb-emoji">🤝</span>
+        Empate
+      </button>
+      <button class="vote-btn" onclick="selectVote('away')" id="vb-away">
+        <span class="vb-emoji" id="vb-flag2">🇦🇷</span>
+        <span id="vb-t2">Argentina</span>
+      </button>
+    </div>
+
+    <!-- Nombre -->
+    <div class="form-group">
+      <label>Tu nombre</label>
+      <input type="text" id="voterName" placeholder="¿Cómo te llamas?" oninput="checkVoteReady()" maxlength="40"/>
+    </div>
+
+    <button class="btn-vote" id="btnVote" onclick="submitVote()">🎯 Enviar mi voto</button>
+
+    <div class="vote-rules">
+      <strong>Reglas:</strong> Un voto por persona · Las votaciones cierran al inicio del partido · Entre los acertantes se hace un sorteo aleatorio en directo · El premio se recoge en el restaurante.
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 4: CONFIRMACIÓN ══ -->
+<div class="step" id="step4">
+  <span class="confetti-anim">🎉</span>
+  <h2>¡Estás<br><span>dentro!</span></h2>
+  <p class="confirm-name" id="confirmName">¡Buena suerte!</p>
+  <p class="confirm-sub">Tu voto ha sido registrado. Si aciertas el resultado entras al sorteo del premio.</p>
+
+  <div class="ticket">
+    <div class="ticket-row">
+      <span class="t-label">Partido</span>
+      <span class="t-value" id="tkt-match">España vs Argentina</span>
+    </div>
+    <div class="ticket-row">
+      <span class="t-label">Tu voto</span>
+      <span class="t-value gold" id="tkt-vote">—</span>
+    </div>
+    <div class="ticket-row">
+      <span class="t-label">🎁 Premio</span>
+      <span class="t-value gold" id="tkt-prize">Cena para 2</span>
+    </div>
+  </div>
+
+  <p class="sorteo-info">
+    El sorteo se hace <strong>en directo</strong> al finalizar el partido.<br>
+    Síguenos en <strong>@lacatedralcuba</strong> para no perdértelo.
+  </p>
+
+  <button class="btn-share" onclick="shareResult()">📤 Compartir con amigos</button>
+</div>
+
+</div><!-- /page -->
+
+<script>
+// ── CONFIGURACIÓN ─────────────────────────────────────────────────
+// Edita estos datos antes de imprimir el QR
+const CONFIG = {
+  team1:  "España",
+  team2:  "Argentina",
+  flag1:  "🇪🇸",
+  flag2:  "🇦🇷",
+  date:   "14 Jun · 21:00h",
+  prize:  "Cena para 2 personas",
+  group:  "H",
+};
+
+// ── STATE ──────────────────────────────────────────────────────────
+let currentStep = 1;
+let joinedWa = false, joinedIg = false;
+let selectedVote = null;
+const steps = [null, 'step1','step2','step3','step4'];
+const progress = [null, 25, 50, 75, 100];
+
+// ── INIT ──────────────────────────────────────────────────────────
+(function init(){
+  // Rellena datos del partido
+  document.getElementById('s1team1').textContent = CONFIG.team1;
+  document.getElementById('s1team2').textContent = CONFIG.team2;
+  document.getElementById('s1flag1').textContent = CONFIG.flag1;
+  document.getElementById('s1flag2').textContent = CONFIG.flag2;
+  document.getElementById('s1prize').textContent = CONFIG.prize;
+
+  document.getElementById('tname1').textContent = CONFIG.team1;
+  document.getElementById('tname2').textContent = CONFIG.team2;
+  document.getElementById('flag1').textContent  = CONFIG.flag1;
+  document.getElementById('flag2').textContent  = CONFIG.flag2;
+  document.getElementById('matchDateStr').textContent = CONFIG.date;
+
+  document.getElementById('vb-t1').textContent   = CONFIG.team1;
+  document.getElementById('vb-t2').textContent   = CONFIG.team2;
+  document.getElementById('vb-flag1').textContent = CONFIG.flag1;
+  document.getElementById('vb-flag2').textContent = CONFIG.flag2;
+
+  document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
+  document.getElementById('tkt-prize').textContent  = CONFIG.prize;
+})();
+
+// ── NAVEGACIÓN ────────────────────────────────────────────────────
+function goStep(n) {
+  document.getElementById(steps[currentStep]).classList.remove('active');
+  currentStep = n;
+  const el = document.getElementById(steps[n]);
+  el.classList.add('active');
+  el.scrollTop = 0;
+  window.scrollTo(0,0);
+  document.getElementById('progressFill').style.width = progress[n] + '%';
+  document.getElementById('backBtn').classList.toggle('visible', n > 1 && n < 4);
+}
+
+function goBack() {
+  if(currentStep > 1) goStep(currentStep - 1);
+}
+
+// ── JOIN TRACKING ─────────────────────────────────────────────────
+function markJoin(platform) {
+  setTimeout(()=>{
+    if(platform === 'wa') {
+      joinedWa = true;
+      document.getElementById('icon-wa').classList.add('done');
+      document.getElementById('icon-wa').textContent = '✓';
+      document.getElementById('label-wa').classList.add('done');
+    } else {
+      joinedIg = true;
+      document.getElementById('icon-ig').classList.add('done');
+      document.getElementById('icon-ig').textContent = '✓';
+      document.getElementById('label-ig').classList.add('done');
+    }
+    checkContinue();
+  }, 1500);
+}
+
+function checkContinue() {
+  if(joinedWa || joinedIg) {
+    document.getElementById('btnContinue').classList.add('enabled');
+  }
+}
+
+// ── VOTE ──────────────────────────────────────────────────────────
+function selectVote(choice) {
+  selectedVote = choice;
+  ['home','draw','away'].forEach(c => {
+    document.getElementById('vb-'+c).classList.toggle('selected', c === choice);
+  });
+  checkVoteReady();
+}
+
+function checkVoteReady() {
+  const name = document.getElementById('voterName').value.trim();
+  const btn  = document.getElementById('btnVote');
+  btn.classList.toggle('enabled', !!(selectedVote && name.length >= 2));
+}
+
+const voteLabels = {
+  home: (t1) => `Gana ${t1}`,
+  draw: ()    => 'Empate',
+  away: (t2)  => `Gana ${t2}`,
+};
+
+function submitVote() {
+  const name = document.getElementById('voterName').value.trim();
+  if(!selectedVote || !name) return;
+
+  // Guarda localmente (en producción esto iría a tu backend/n8n)
+  const voteData = {
+    name,
+    team1: CONFIG.team1,
+    team2: CONFIG.team2,
+    vote: selectedVote,
+    timestamp: new Date().toISOString(),
+    prize: CONFIG.prize,
+  };
+  localStorage.setItem('rf_last_vote', JSON.stringify(voteData));
+
+  // Actualiza confirmación
+  document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
+  const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
+  document.getElementById('tkt-vote').textContent = vLabel;
+
+  goStep(4);
+  launchConfetti();
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────
+function shareResult() {
+  const name = document.getElementById('voterName').value.trim() || 'Yo';
+  const vLabel = voteLabels[selectedVote]?.(CONFIG.team1, CONFIG.team2) || '';
+  const text = `⚽ Acabo de votar en la Rifa Futbolera de La Catedral!\n\nPartido: ${CONFIG.team1} vs ${CONFIG.team2}\nMi predicción: ${vLabel}\n\n¡Únete y participa gratis! 🎁`;
+  if(navigator.share) {
+    navigator.share({ title: 'Rifa Futbolera · La Catedral', text });
+  } else {
+    navigator.clipboard.writeText(text).then(()=> alert('¡Texto copiado! Pégalo donde quieras 😄'));
+  }
+}
+
+// ── CONFETTI ──────────────────────────────────────────────────────
+function launchConfetti() {
+  const colors = ['#c9a84c','#e8c96a','#fff','#f5f0e8','#8b1a1a','#22c55e'];
+  for(let i=0;i<60;i++){
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;
+      top:-10px;left:${Math.random()*100}vw;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      animation:fall ${Math.random()*2+2}s ${Math.random()*.8}s linear forwards;
+      z-index:999;pointer-events:none;opacity:0;
+    `;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 4000);
+  }
+}
+
+// CSS keyframe para confetti
+const style = document.createElement('style');
+style.textContent=`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
