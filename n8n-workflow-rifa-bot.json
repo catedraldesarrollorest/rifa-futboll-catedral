@@ -1,0 +1,311 @@
+{
+  "name": "Rifa Futbolera WhatsApp Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "whatsapp-webhook",
+        "responseMode": "onReceived",
+        "responseData": "{}",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "rifa-whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extraer datos del mensaje de Twilio\nconst body = $input.first().json.Body || '';\nconst from = $input.first().json.From || '';\nconst to = $input.first().json.To || '';\n\nreturn {\n  mensaje: body.trim().toUpperCase(),\n  telefono: from.replace('whatsapp:', ''),\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Parse Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Parse Message'].json.telefono }}",
+              "operation": "contains",
+              "value2": "5358416293"
+            }
+          ]
+        }
+      },
+      "name": "Is Amalia?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Parse Message'].json.telefono }}",
+              "operation": "contains",
+              "value2": "5355162840"
+            }
+          ]
+        }
+      },
+      "name": "Is Abelito?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Parse Message'].json.telefono }}",
+              "operation": "contains",
+              "value2": "5358867972"
+            }
+          ]
+        }
+      },
+      "name": "Is Frank?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Si es cliente (no es admin), registrar voto\nconst telefono = $node['Parse Message'].json.telefono;\nconst mensaje = $node['Parse Message'].json.mensaje;\n\nlet voto = null;\nif (mensaje.includes('ESPAÑA') || mensaje.includes('HOME')) voto = 'home';\nif (mensaje.includes('EMPATE') || mensaje.includes('DRAW')) voto = 'draw';\nif (mensaje.includes('ARGENTINA') || mensaje.includes('AWAY')) voto = 'away';\n\nreturn {\n  es_admin: false,\n  voto: voto,\n  telefono_hash: telefono.slice(-4),\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Process Client Vote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Procesar comando admin\nconst mensaje = $node['Parse Message'].json.mensaje;\nconst telefono = $node['Parse Message'].json.telefono;\n\nlet admin_nombre = 'Admin';\nif (telefono.includes('5358416293')) admin_nombre = 'Amalia';\nif (telefono.includes('5355162840')) admin_nombre = 'Abelito';\nif (telefono.includes('5358867972')) admin_nombre = 'Frank';\n\nreturn {\n  es_admin: true,\n  admin_nombre: admin_nombre,\n  comando: mensaje,\n  requiere_pin: !mensaje.includes('1010')\n};"
+      },
+      "name": "Process Admin Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "host": "{{ $secret.SUPABASE_URL }}",
+        "parameterizedQueries": true,
+        "queries": "SELECT * FROM rifa_votos ORDER BY timestamp DESC LIMIT 100",
+        "ssl": true
+      },
+      "name": "Get Votes from Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        0
+      ],
+      "credentials": {
+        "postgres": "supabase"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Contar votos y formular respuesta\nconst votos = $node['Get Votes from Supabase'].json;\n\nlet españa = 0, empate = 0, argentina = 0;\nvotos.forEach(v => {\n  if (v.voto === 'home') españa++;\n  if (v.voto === 'draw') empate++;\n  if (v.voto === 'away') argentina++;\n});\n\nreturn {\n  respuesta: `📊 VOTOS ACTUALES\\n\\n🇪🇸 España: ${españa}\\n🤝 Empate: ${empate}\\n🇦🇷 Argentina: ${argentina}\\n\\nTotal: ${españa + empate + argentina}`\n};"
+      },
+      "name": "Format Vote Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "accountSid": "{{ $secret.TWILIO_ACCOUNT_SID }}",
+        "authToken": "{{ $secret.TWILIO_AUTH_TOKEN }}",
+        "toNumber": "={{ $node['Parse Message'].json.telefono }}",
+        "messageText": "{{ $node['Format Vote Response'].json.respuesta }}",
+        "resource": "message"
+      },
+      "name": "Send WhatsApp Response",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        0
+      ],
+      "credentials": {
+        "twilioApi": "twilio"
+      }
+    },
+    {
+      "parameters": {
+        "host": "{{ $secret.SUPABASE_URL }}",
+        "parameterizedQueries": true,
+        "queries": "INSERT INTO rifa_historial (admin_nombre, admin_phone, accion, detalles, timestamp) VALUES ('{{ $node['Process Admin Command'].json.admin_nombre }}', '{{ $node['Parse Message'].json.telefono }}', 'Ver votos', '{}', NOW())",
+        "ssl": true
+      },
+      "name": "Save to Historial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        200
+      ],
+      "credentials": {
+        "postgres": "supabase"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message": {
+      "main": [
+        [
+          {
+            "node": "Is Amalia?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Abelito?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Frank?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Client Vote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Amalia?": {
+      "main": [
+        [
+          {
+            "node": "Process Admin Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Abelito?": {
+      "main": [
+        [
+          {
+            "node": "Process Admin Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Frank?": {
+      "main": [
+        [
+          {
+            "node": "Process Admin Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Client Vote": {
+      "main": [
+        [
+          {
+            "node": "Get Votes from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Admin Command": {
+      "main": [
+        [
+          {
+            "node": "Get Votes from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Votes from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Vote Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Vote Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Save to Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
