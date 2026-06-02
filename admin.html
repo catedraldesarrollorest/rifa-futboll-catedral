@@ -511,6 +511,7 @@ function showDashboard() {
 
 async function loadVotes() {
   try {
+    console.log('📥 Cargando votos...');
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?order=timestamp.desc`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -518,7 +519,12 @@ async function loadVotes() {
       }
     });
 
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status} ${res.statusText}`);
+    }
+
     voteData = await res.json();
+    console.log('✅ Votos cargados:', voteData.length);
 
     // Actualizar stats
     const total = voteData.length;
@@ -536,22 +542,28 @@ async function loadVotes() {
 
     // Tabla de votos
     const tbody = document.getElementById('votesBody');
-    tbody.innerHTML = voteData.map(v => `
-      <tr>
-        <td>${v.nombre || '—'}</td>
-        <td style="font-size:0.85rem;">${v.email || '—'}</td>
-        <td>
-          <span class="vote-badge vote-${v.voto}">
-            ${v.voto === 'home' ? '🇪🇸 España' : v.voto === 'draw' ? '🤝 Empate' : '🇦🇷 Argentina'}
-          </span>
-        </td>
-        <td style="font-size:0.85rem;color:var(--muted);">${new Date(v.timestamp).toLocaleString('es-ES')}</td>
-      </tr>
-    `).join('');
+    if (tbody) {
+      tbody.innerHTML = voteData.map(v => `
+        <tr>
+          <td>${v.nombre || '—'}</td>
+          <td style="font-size:0.85rem;">${v.email || '—'}</td>
+          <td>
+            <span class="vote-badge vote-${v.voto}">
+              ${v.voto === 'home' ? '🇪🇸 España' : v.voto === 'draw' ? '🤝 Empate' : '🇦🇷 Argentina'}
+            </span>
+          </td>
+          <td style="font-size:0.85rem;color:var(--muted);">${new Date(v.timestamp).toLocaleString('es-ES')}</td>
+        </tr>
+      `).join('');
+    }
 
     updateWinners();
   } catch(err) {
-    console.error('Error cargando votos:', err);
+    console.error('❌ Error cargando votos:', err);
+    const tbody = document.getElementById('votesBody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444;">Error: ${err.message}</td></tr>`;
+    }
   }
 }
 
@@ -623,10 +635,17 @@ function selectWinner() {
 }
 
 // Verificar si está logueado
-if(!sessionStorage.getItem('adminLogged')) {
-  document.getElementById('loginScreen').style.display = 'flex';
-} else {
-  showDashboard();
-  loadVotes();
-}
-<!-- Vercel redeploy trigger -->
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if(!sessionStorage.getItem('adminLogged')) {
+      console.log('📱 Mostrando login');
+      document.getElementById('loginScreen').style.display = 'flex';
+    } else {
+      console.log('✅ Admin logueado, cargando dashboard');
+      showDashboard();
+      loadVotes().catch(err => console.error('Error en loadVotes:', err));
+    }
+  } catch(err) {
+    console.error('❌ Error en inicialización:', err);
+  }
+});
