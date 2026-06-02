@@ -1078,8 +1078,21 @@ async function handleLogin(e) {
         })
       });
 
-      const newUser = await createRes.json();
-      console.log('✅ Usuario creado:', newUser);
+      console.log('POST Status:', createRes.status, createRes.statusText);
+      if(!createRes.ok) {
+        const errText = await createRes.text();
+        throw new Error(`POST falló: ${createRes.status} - ${errText}`);
+      }
+
+      let newUser = [];
+      try {
+        newUser = await createRes.json();
+        console.log('✅ Usuario creado:', newUser);
+      } catch(e) {
+        console.log('⚠️ No JSON en respuesta, pero OK. Email:', email);
+        newUser = [{ id: email }];
+      }
+
       localStorage.setItem('rf_user_id', newUser[0]?.id || email);
       localStorage.setItem('rf_user_email', email);
       localStorage.setItem('rf_user_pin', newPin);
