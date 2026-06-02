@@ -1091,7 +1091,7 @@ async function handleLogin(e) {
       hideLogin();
 
       // Si ya votó: mostrar pantalla de bienvenida
-      if(user.votado && user.voto_actual) {
+      if(user.voto_actual) {
         console.log('👋 Usuario devolviendo, ya tiene voto:', user.voto_actual);
         const voteLabel = {
           'home': `Gana ${CONFIG.team1}`,
