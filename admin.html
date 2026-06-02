@@ -751,7 +751,7 @@ async function saveNewRifa() {
   try {
     // 1️⃣ BORRAR TODOS LOS VOTOS DE LA RIFA ANTERIOR
     console.log('🔄 Borrando votos anteriores...');
-    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?id=gt.0`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
@@ -760,15 +760,18 @@ async function saveNewRifa() {
       }
     });
 
+    console.log('DELETE votos response:', deleteVotesRes.status, deleteVotesRes.statusText);
+    const votesText = await deleteVotesRes.text();
+    console.log('DELETE votos response body:', votesText);
+
     if (!deleteVotesRes.ok) {
-      const err = await deleteVotesRes.text();
-      throw new Error(`No se pudieron borrar votos: ${deleteVotesRes.status} - ${err}`);
+      throw new Error(`No se pudieron borrar votos: ${deleteVotesRes.status} - ${votesText}`);
     }
     console.log('✅ Votos borrados');
 
     // 2️⃣ BORRAR TODOS LOS USUARIOS - RESET COMPLETO
     console.log('🔄 Borrando todos los usuarios (reset total)...');
-    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=gt.0`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
@@ -777,9 +780,12 @@ async function saveNewRifa() {
       }
     });
 
+    console.log('DELETE usuarios response:', deleteUsersRes.status, deleteUsersRes.statusText);
+    const usersText = await deleteUsersRes.text();
+    console.log('DELETE usuarios response body:', usersText);
+
     if (!deleteUsersRes.ok) {
-      const err = await deleteUsersRes.text();
-      throw new Error(`No se pudieron borrar usuarios: ${deleteUsersRes.status} - ${err}`);
+      throw new Error(`No se pudieron borrar usuarios: ${deleteUsersRes.status} - ${usersText}`);
     }
     console.log('✅ Todos los usuarios borrados - RESET COMPLETO');
 
