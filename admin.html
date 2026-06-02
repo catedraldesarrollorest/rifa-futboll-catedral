@@ -506,7 +506,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let voteData = [];
 
-function handleAdminLogin(e) {
+async function handleAdminLogin(e) {
   e.preventDefault();
 
   const pin = document.getElementById('adminPin').value.trim();
@@ -529,7 +529,7 @@ function handleAdminLogin(e) {
   loginError.style.display = 'none';
   sessionStorage.setItem('adminLogged', 'true');
   showDashboard();
-  loadVotes();
+  await loadVotes();
 }
 
 function logout() {
@@ -853,6 +853,6 @@ if(!sessionStorage.getItem('adminLogged')) {
   document.getElementById('loginScreen').style.display = 'flex';
 } else {
   showDashboard();
-  loadVotes();
+  loadVotes().catch(err => console.error('Error cargando votos:', err));
 }
 <!-- Vercel redeploy trigger -->
