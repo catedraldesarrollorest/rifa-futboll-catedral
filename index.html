@@ -645,7 +645,77 @@ h1.main-title span { color: var(--oro); }
   transition: width 0.4s ease;
 }
 
-/* ── BACK BTN ── */
+/* ── MODAL LOGIN ── */
+.login-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(10,10,8,0.9);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-modal.active { display: flex; }
+.login-box {
+  background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.03));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.3s var(--ease-out);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.login-box h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.login-box p {
+  font-size: 0.85rem;
+  color: rgba(245,240,232,0.6);
+  margin-bottom: 24px;
+}
+.login-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form input {
+  background: rgba(245,240,232,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--crema);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  transition: border-color 150ms var(--ease-out);
+}
+.login-form input:focus { outline: none; border-color: var(--oro); }
+.login-form input::placeholder { color: rgba(245,240,232,0.3); }
+.btn-login {
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--oro), var(--oro-dark));
+  color: var(--negro);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  margin-top: 8px;
+}
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-login:not(:disabled):hover { transform: translateY(-2px); }
+}
+.btn-login:active:not(:disabled) { transform: scale(0.97); }
+.login-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 12px;
+  display: none;
+}
 .back-btn {
   position: fixed; top: 16px; left: 16px;
   width: 38px; height: 38px;
@@ -681,6 +751,20 @@ h1.main-title span { color: var(--oro); }
   </a>
 </div>
 
+<!-- LOGIN MODAL -->
+<div class="login-modal" id="loginModal">
+  <div class="login-box">
+    <h3>Inicia sesión</h3>
+    <p>Ingresa tu email y PIN para participar</p>
+    <form class="login-form" onsubmit="handleLogin(event)">
+      <input type="email" id="loginEmail" placeholder="Tu email" required />
+      <input type="password" id="loginPin" placeholder="PIN (1010)" maxlength="4" required />
+      <button type="submit" class="btn-login">Entrar →</button>
+    </form>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
 <div class="page">
 
 <!-- ══ STEP 1: BIENVENIDA ══ -->
@@ -708,7 +792,7 @@ h1.main-title span { color: var(--oro); }
     </div>
   </div>
 
-  <button class="btn-start" onclick="goStep(2)">¡Quiero participar! →</button>
+  <button class="btn-start" onclick="showLogin()">¡Quiero participar! →</button>
   <p class="rules-hint">Gratis · Solo necesitas escanear este QR</p>
 </div>
 
@@ -915,6 +999,79 @@ function checkAdminAccess() {
   checkAdminAccess();
 })();
 
+// ── SUPABASE CONFIG ────────────────────────────────────────────
+const SUPABASE_URL = 'https://uqwmnuqfffgdoobjlzug.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxd21udXFmZmZnZG9vYmpsenoiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0NzY2MzYxMiwiZXhwIjoxODk4NDg5NjEyfQ.fmqCjNqB0ks-q0cjX9RMG3X8F1F2aQqVqVqVqVqVqVq';
+
+// ── LOGIN FUNCTIONS ────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('loginModal').classList.add('active');
+  document.getElementById('loginEmail').focus();
+}
+
+function hideLogin() {
+  document.getElementById('loginModal').classList.remove('active');
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pin = document.getElementById('loginPin').value;
+  const errorEl = document.getElementById('loginError');
+
+  if(!email || pin !== '1010') {
+    errorEl.textContent = 'Email o PIN incorrectos';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    // Buscar usuario en Supabase
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+
+    const users = await res.json();
+
+    if(users.length === 0) {
+      // Nuevo usuario: crear
+      const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          pin: '1010',
+          activo: true
+        })
+      });
+
+      const newUser = await createRes.json();
+      localStorage.setItem('rf_user_id', newUser[0]?.id || email);
+      localStorage.setItem('rf_user_email', email);
+      hideLogin();
+      goStep(2);
+    } else {
+      // Usuario existente
+      const user = users[0];
+      localStorage.setItem('rf_user_id', user.id);
+      localStorage.setItem('rf_user_email', user.email);
+      localStorage.setItem('rf_previous_vote', user.voto_actual);
+      hideLogin();
+      goStep(2);
+    }
+
+    errorEl.style.display = 'none';
+  } catch(err) {
+    console.error('Error de login:', err);
+    errorEl.textContent = 'Error al conectar. Intenta de nuevo.';
+    errorEl.style.display = 'block';
+  }
+}
+
 // ── NAVEGACIÓN ────────────────────────────────────────────────────
 function goStep(n) {
   document.getElementById(steps[currentStep]).classList.remove('active');
@@ -928,6 +1085,7 @@ function goStep(n) {
 }
 
 function goBack() {
+  hideLogin();
   if(currentStep > 1) goStep(currentStep - 1);
 }
 
@@ -976,28 +1134,79 @@ const voteLabels = {
   away: (t2)  => `Gana ${t2}`,
 };
 
-function submitVote() {
+async function submitVote() {
   const name = document.getElementById('voterName').value.trim();
   if(!selectedVote || !name) return;
 
-  // Guarda localmente (en producción esto iría a tu backend/n8n)
-  const voteData = {
-    name,
-    team1: CONFIG.team1,
-    team2: CONFIG.team2,
-    vote: selectedVote,
-    timestamp: new Date().toISOString(),
-    prize: CONFIG.prize,
-  };
-  localStorage.setItem('rf_last_vote', JSON.stringify(voteData));
+  const userId = localStorage.getItem('rf_user_id');
+  const userEmail = localStorage.getItem('rf_user_email');
+  const previousVote = localStorage.getItem('rf_previous_vote');
 
-  // Actualiza confirmación
-  document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
-  const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
-  document.getElementById('tkt-vote').textContent = vLabel;
+  try {
+    // Si ya votó: actualizar voto
+    if(previousVote) {
+      await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          voto: selectedVote,
+          nombre: name,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } else {
+      // Nuevo voto
+      await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          nombre: name,
+          team1: CONFIG.team1,
+          team2: CONFIG.team2,
+          voto: selectedVote,
+          timestamp: new Date().toISOString()
+        })
+      });
 
-  goStep(4);
-  launchConfetti();
+      // Actualizar usuario como votado
+      await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          votado: true,
+          voto_actual: selectedVote,
+          ultima_votacion: new Date().toISOString()
+        })
+      });
+    }
+
+    // Guarda en localStorage también
+    localStorage.setItem('rf_last_vote', selectedVote);
+
+    // Actualiza confirmación
+    document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
+    const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
+    document.getElementById('tkt-vote').textContent = vLabel;
+
+    goStep(4);
+    launchConfetti();
+  } catch(err) {
+    console.error('Error al guardar voto:', err);
+    alert('Error al guardar tu voto. Intenta de nuevo.');
+  }
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────
