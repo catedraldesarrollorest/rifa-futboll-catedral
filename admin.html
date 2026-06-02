@@ -371,7 +371,7 @@ body {
     <h1>🔐 Admin</h1>
     <p>Panel de control · Rifa Futbolera</p>
     <form class="login-form" onsubmit="handleAdminLogin(event)">
-      <input type="password" id="adminPin" placeholder="PIN admin" maxlength="4" required autofocus />
+      <input type="text" id="adminPin" placeholder="Ej: 5555" maxlength="4" required autofocus />
       <button type="submit" class="btn-login">Entrar →</button>
     </form>
     <div class="login-error" id="loginError"></div>
@@ -478,6 +478,10 @@ function handleAdminLogin(e) {
 
   // PINs especiales para cada admin (diferente al PIN de usuarios)
   const ADMIN_PINS = ['5555', '5556', '5557']; // Amalia, Abelito, Frank
+
+  console.log('PIN ingresado:', pin, 'Longitud:', pin.length, 'Tipo:', typeof pin);
+  console.log('PINs válidos:', ADMIN_PINS);
+  console.log('¿Coincide?:', ADMIN_PINS.includes(pin));
 
   if(!pin) {
     errorEl.textContent = 'Por favor ingresa tu PIN admin';
