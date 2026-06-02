@@ -419,7 +419,7 @@ body {
       <div class="sub">participantes</div>
     </div>
     <div class="card">
-      <h3>🇪🇸 España</h3>
+      <h3 id="team1Label">🇪🇸 España</h3>
       <div class="number" id="homeVotes">0</div>
       <div class="sub" id="homePercent">0%</div>
     </div>
@@ -429,7 +429,7 @@ body {
       <div class="sub" id="drawPercent">0%</div>
     </div>
     <div class="card">
-      <h3>🇦🇷 Argentina</h3>
+      <h3 id="team2Label">🇦🇷 Argentina</h3>
       <div class="number" id="awayVotes">0</div>
       <div class="sub" id="awayPercent">0%</div>
     </div>
@@ -544,6 +544,39 @@ const SUPABASE_URL = 'https://tigbtwqwfwcqdfwlndkf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2J0d3F3ZndjcWRmd2xuZGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTUwNTIsImV4cCI6MjA5NTk5MTA1Mn0.sT8bwHKzRZ99FaRog7vD8H2LuYdxdM5V-w-vHHWgvOQ';
 
 let voteData = [];
+
+// ── CONFIGURACIÓN ACTUAL ──────────────────────────────────────────────
+function getConfig() {
+  return {
+    team1: localStorage.getItem('config_team1') || "España",
+    team2: localStorage.getItem('config_team2') || "Argentina",
+    flag1: localStorage.getItem('config_flag1') || "🇪🇸",
+    flag2: localStorage.getItem('config_flag2') || "🇦🇷",
+    date: localStorage.getItem('config_date') || "14 Jun · 21:00h",
+    prize: localStorage.getItem('config_prize') || "Cena para 2 personas"
+  };
+}
+
+function updateTeamLabels() {
+  const config = getConfig();
+  const team1Label = document.getElementById('team1Label');
+  const team2Label = document.getElementById('team2Label');
+  if(team1Label) team1Label.textContent = `${config.flag1} ${config.team1}`;
+  if(team2Label) team2Label.textContent = `${config.flag2} ${config.team2}`;
+}
+
+function updateMatchResultDropdown() {
+  const config = getConfig();
+  const select = document.getElementById('matchResult');
+  if(select) {
+    select.innerHTML = `
+      <option value="">Selecciona...</option>
+      <option value="home">${config.flag1} Gana ${config.team1}</option>
+      <option value="draw">🤝 Empate</option>
+      <option value="away">${config.flag2} Gana ${config.team2}</option>
+    `;
+  }
+}
 
 // ── CONTADOR REGRESIVO ────────────────────────────────────────────────
 function parseMatchTime(dateStr) {
@@ -664,6 +697,10 @@ async function loadVotes() {
     voteData = await res.json();
     console.log('✅ Votos cargados:', voteData.length);
 
+    // Actualizar nombres de equipos
+    updateTeamLabels();
+    updateMatchResultDropdown();
+
     // Actualizar stats
     const total = voteData.length;
     const home = voteData.filter(v => v.voto === 'home').length;
@@ -681,13 +718,14 @@ async function loadVotes() {
     // Tabla de votos
     const tbody = document.getElementById('votesBody');
     if (tbody) {
+      const config = getConfig();
       tbody.innerHTML = voteData.map(v => `
         <tr>
           <td>${v.nombre || '—'}</td>
           <td style="font-size:0.85rem;">${v.email || '—'}</td>
           <td>
             <span class="vote-badge vote-${v.voto}">
-              ${v.voto === 'home' ? '🇪🇸 España' : v.voto === 'draw' ? '🤝 Empate' : '🇦🇷 Argentina'}
+              ${v.voto === 'home' ? `${config.flag1} ${config.team1}` : v.voto === 'draw' ? '🤝 Empate' : `${config.flag2} ${config.team2}`}
             </span>
           </td>
           <td style="font-size:0.85rem;color:var(--muted);">${new Date(v.timestamp).toLocaleString('es-ES')}</td>
@@ -840,6 +878,8 @@ async function saveNewRifa() {
     alert('✅ Nueva rifa iniciada!\n\nLos datos se actualizarán en la página principal.\nRecarga para ver los cambios.');
 
     closeNewRifaModal();
+    updateTeamLabels();
+    updateMatchResultDropdown();
     updateCountdown();
     loadVotes();
   } catch(err) {
