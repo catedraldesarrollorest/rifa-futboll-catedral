@@ -1107,8 +1107,8 @@ async function handleLogin(e) {
       localStorage.removeItem('rf_previous_vote');
       document.getElementById('loginEmail').value = '';
       hideLogin();
-      console.log('📍 Ir a step 3 (nuevos usuarios - directo a votar)');
-      goStep(3);
+      console.log('📍 Ir a step 2 (nuevos usuarios)');
+      goStep(2);
       return;
     } else {
       console.log('👤 USUARIO EXISTENTE:', users[0]);
