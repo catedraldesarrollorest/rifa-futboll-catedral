@@ -371,7 +371,7 @@ body {
     <h1>🔐 Admin</h1>
     <p>Panel de control · Rifa Futbolera</p>
     <form class="login-form" onsubmit="handleAdminLogin(event)">
-      <input type="password" id="adminPin" placeholder="PIN (1010)" maxlength="4" required autofocus />
+      <input type="password" id="adminPin" placeholder="PIN admin" maxlength="4" required autofocus />
       <button type="submit" class="btn-login">Entrar →</button>
     </form>
     <div class="login-error" id="loginError"></div>
@@ -475,12 +475,15 @@ function handleAdminLogin(e) {
   e.preventDefault();
   const pin = document.getElementById('adminPin').value;
 
-  if(pin === '1010') {
+  // PINs especiales para cada admin (diferente al PIN de usuarios)
+  const ADMIN_PINS = ['5555', '5556', '5557']; // Amalia, Abelito, Frank
+
+  if(ADMIN_PINS.includes(pin)) {
     sessionStorage.setItem('adminLogged', 'true');
     showDashboard();
     loadVotes();
   } else {
-    document.getElementById('loginError').textContent = 'PIN incorrecto';
+    document.getElementById('loginError').textContent = 'PIN admin incorrecto';
     document.getElementById('loginError').style.display = 'block';
   }
 }

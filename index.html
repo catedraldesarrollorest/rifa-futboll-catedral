@@ -754,21 +754,16 @@ h1.main-title span { color: var(--oro); }
 <!-- LOGIN MODAL -->
 <div class="login-modal" id="loginModal">
   <div class="login-box">
-    <h3>Inicia sesión</h3>
-    <p>Completa tus datos para participar</p>
+    <h3>Únete a la Rifa</h3>
+    <p>Ingresa tu email para participar</p>
     <form class="login-form" onsubmit="handleLogin(event)">
       <div style="text-align:left;margin-bottom:12px;">
         <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu email</label>
-        <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required style="width:100%;"/>
+        <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required style="width:100%;" autofocus/>
       </div>
-      <div style="text-align:left;margin-bottom:12px;">
-        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">PIN (1010)</label>
-        <input type="password" id="loginPin" placeholder="****" maxlength="4" required style="width:100%;font-size:1.5rem;letter-spacing:8px;text-align:center;"/>
-      </div>
-      <button type="submit" class="btn-login">Entrar a participar →</button>
+      <button type="submit" class="btn-login">Continuar →</button>
     </form>
     <div class="login-error" id="loginError"></div>
-    <p style="font-size:0.75rem;color:var(--muted);margin-top:16px;">💡 PIN por defecto: 1010</p>
   </div>
 </div>
 
@@ -926,6 +921,10 @@ h1.main-title span { color: var(--oro); }
       <span class="t-label">🎁 Premio</span>
       <span class="t-value gold" id="tkt-prize">Cena para 2</span>
     </div>
+    <div class="ticket-row">
+      <span class="t-label">Tu PIN personal</span>
+      <span class="t-value gold" id="tkt-pin">—</span>
+    </div>
   </div>
 
   <p class="sorteo-info">
@@ -1018,20 +1017,17 @@ function hideLogin() {
   document.getElementById('loginModal').classList.remove('active');
 }
 
+function generatePin() {
+  return Math.floor(Math.random() * 9000 + 1000).toString();
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pin = document.getElementById('loginPin').value.trim();
   const errorEl = document.getElementById('loginError');
 
   if(!email) {
     errorEl.textContent = 'Por favor ingresa tu email';
-    errorEl.style.display = 'block';
-    return;
-  }
-
-  if(pin !== '1010') {
-    errorEl.textContent = 'PIN incorrecto (es 1010)';
     errorEl.style.display = 'block';
     return;
   }
@@ -1045,7 +1041,8 @@ async function handleLogin(e) {
     const users = await res.json();
 
     if(users.length === 0) {
-      // Nuevo usuario: crear
+      // Nuevo usuario: generar PIN único
+      const newPin = generatePin();
       const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
         method: 'POST',
         headers: {
@@ -1055,7 +1052,7 @@ async function handleLogin(e) {
         },
         body: JSON.stringify({
           email: email,
-          pin: '1010',
+          pin: newPin,
           activo: true
         })
       });
@@ -1063,6 +1060,7 @@ async function handleLogin(e) {
       const newUser = await createRes.json();
       localStorage.setItem('rf_user_id', newUser[0]?.id || email);
       localStorage.setItem('rf_user_email', email);
+      localStorage.setItem('rf_user_pin', newPin);
       hideLogin();
       goStep(2);
     } else {
@@ -1070,6 +1068,7 @@ async function handleLogin(e) {
       const user = users[0];
       localStorage.setItem('rf_user_id', user.id);
       localStorage.setItem('rf_user_email', user.email);
+      localStorage.setItem('rf_user_pin', user.pin);
       localStorage.setItem('rf_previous_vote', user.voto_actual);
       hideLogin();
       goStep(2);
@@ -1211,6 +1210,7 @@ async function submitVote() {
     document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
     const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
     document.getElementById('tkt-vote').textContent = vLabel;
+    document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
 
     goStep(4);
     launchConfetti();
