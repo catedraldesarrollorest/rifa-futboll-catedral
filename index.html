@@ -1154,66 +1154,61 @@ async function submitVote() {
 
   try {
     console.log('💾 Guardando voto...');
+    const now = new Date().toISOString();
+    console.log('⏰ Timestamp:', now);
 
-    // Si ya votó: actualizar voto
-    if(previousVote) {
-      console.log('🔄 Actualizando voto anterior...');
-      const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          voto: selectedVote,
-          nombre: name,
-          timestamp: new Date().toISOString()
-        })
-      });
-      if(!patchRes.ok) throw new Error(`PATCH falló: ${patchRes.status} ${patchRes.statusText}`);
-      console.log('✅ Voto actualizado');
-    } else {
-      // Nuevo voto
-      console.log('➕ Insertando nuevo voto...');
-      const postRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: userEmail,
-          nombre: name,
-          voto: selectedVote,
-          timestamp: new Date().toISOString()
-        })
-      });
-      if(!postRes.ok) {
-        const errText = await postRes.text();
-        throw new Error(`POST rifa_votos falló: ${postRes.status} ${postRes.statusText} - ${errText}`);
-      }
-      console.log('✅ Voto guardado');
+    // Nuevo voto (primero SIEMPRE es nuevo)
+    console.log('➕ Insertando voto para:', userEmail);
+    const votoData = {
+      email: userEmail,
+      nombre: name,
+      voto: selectedVote
+    };
+    console.log('📤 Datos a enviar:', votoData);
 
-      // Actualizar usuario como votado
-      console.log('🔄 Actualizando estado usuario...');
-      const userRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=eq.${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          votado: true,
-          voto_actual: selectedVote,
-          ultima_votacion: new Date().toISOString()
-        })
-      });
-      if(!userRes.ok) throw new Error(`PATCH usuario falló: ${userRes.status} ${userRes.statusText}`);
-      console.log('✅ Estado actualizado');
+    const postRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(votoData)
+    });
+
+    const postStatus = postRes.status;
+    const postText = await postRes.text();
+    console.log(`📨 Respuesta POST: ${postStatus}`, postText);
+
+    if(!postRes.ok) {
+      throw new Error(`POST rifa_votos falló: ${postStatus} ${postRes.statusText} - ${postText}`);
     }
+    console.log('✅ Voto guardado en rifa_votos');
+
+    // Actualizar usuario como votado
+    console.log('🔄 Actualizando estado usuario...');
+    const userData = {
+      votado: true,
+      voto_actual: selectedVote
+    };
+    console.log('📤 Datos usuario:', userData);
+
+    const userRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    const userStatus = userRes.status;
+    const userText = await userRes.text();
+    console.log(`📨 Respuesta PATCH usuario: ${userStatus}`, userText);
+
+    if(!userRes.ok) throw new Error(`PATCH usuario falló: ${userStatus} ${userRes.statusText}`);
+    console.log('✅ Estado usuario actualizado');
 
     // Guarda en localStorage también
     localStorage.setItem('rf_last_vote', selectedVote);
