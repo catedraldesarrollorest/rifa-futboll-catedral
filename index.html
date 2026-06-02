@@ -966,9 +966,7 @@ function checkAdminAccess() {
     badge.classList.add('visible');
 
     const adminLink = document.getElementById('adminLink');
-    const msg = 'Hola, soy admin de la Rifa Futbolera';
-    const waLink = `https://wa.me/${ADMIN_BOT_PHONE}?text=${encodeURIComponent(msg)}`;
-    adminLink.href = waLink;
+    adminLink.href = 'admin.html';
   }
 }
 
