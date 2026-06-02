@@ -1117,18 +1117,37 @@ async function handleLogin(e) {
 
 // ── NAVEGACIÓN ────────────────────────────────────────────────────
 function goStep(n) {
-  const stepName = typeof n === 'string' ? n : steps[n];
-  const stepIndex = typeof n === 'string' ? steps.indexOf(n) : n;
+  let stepIndex, stepName;
+
+  if(typeof n === 'string') {
+    stepIndex = steps.indexOf(n);
+    stepName = n;
+  } else {
+    stepIndex = n;
+    stepName = steps[n];
+  }
+
+  if(stepIndex < 0 || !stepName) {
+    console.error('Step no encontrado:', n);
+    return;
+  }
 
   document.getElementById(steps[currentStep])?.classList.remove('active');
   currentStep = stepIndex;
   const el = document.getElementById(stepName);
+
   if(el) {
     el.classList.add('active');
     el.scrollTop = 0;
+  } else {
+    console.error('Elemento no encontrado:', stepName);
+    return;
   }
+
   window.scrollTo(0,0);
-  document.getElementById('progressFill').style.width = progress[stepIndex] + '%';
+  if(progress[stepIndex] !== undefined) {
+    document.getElementById('progressFill').style.width = progress[stepIndex] + '%';
+  }
   document.getElementById('backBtn').classList.toggle('visible', stepIndex > 1 && stepIndex < 5);
 }
 
