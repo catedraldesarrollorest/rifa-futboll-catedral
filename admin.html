@@ -583,8 +583,7 @@ async function getConfig() {
   };
 }
 
-function updateTeamLabels() {
-  const config = getConfig();
+function updateTeamLabels(config) {
   // Actualizar los cards de stats
   const homeCard = document.querySelector('.dash-grid .card:nth-child(2) h3');
   const awayCard = document.querySelector('.dash-grid .card:nth-child(4) h3');
@@ -593,8 +592,7 @@ function updateTeamLabels() {
   if(awayCard) awayCard.textContent = `${config.flag2} ${config.team2}`;
 }
 
-function updateMatchResultDropdown() {
-  const config = getConfig();
+function updateMatchResultDropdown(config) {
   const select = document.getElementById('matchResult');
 
   select.innerHTML = `
@@ -632,8 +630,8 @@ async function loadVotes() {
     document.getElementById('awayPercent').textContent = total > 0 ? Math.round(away/total*100) + '%' : '0%';
 
     // Actualizar labels de equipos dinámicamente
-    updateTeamLabels();
-    updateMatchResultDropdown();
+    updateTeamLabels(config);
+    updateMatchResultDropdown(config);
 
     // Tabla de votos (con equipos dinámicos)
     const tbody = document.getElementById('votesBody');
