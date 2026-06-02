@@ -1235,9 +1235,9 @@ function checkVoteReady() {
 }
 
 const voteLabels = {
-  home: (t1) => `Gana ${t1}`,
-  draw: ()    => 'Empate',
-  away: (t2)  => `Gana ${t2}`,
+  home: (t1, t2) => `Gana ${t1}`,
+  draw: (t1, t2) => 'Empate',
+  away: (t1, t2) => `Gana ${t2}`,
 };
 
 function confirmExistingVote() {
