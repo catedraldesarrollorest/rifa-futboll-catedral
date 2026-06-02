@@ -438,7 +438,7 @@ body {
           <label>Premio</label>
           <input type="text" id="newPrize" placeholder="Ej: $50 en consumo" value="$50 en consumo" />
         </div>
-        <button type="button" class="btn-result" onclick="saveNewRifa()">🎯 Crear Nueva Rifa (Borra votos anteriores)</button>
+        <button type="button" class="btn-result" onclick="saveNewRifa()">🎯 Crear Nueva Rifa (RESET: Borra todos usuarios y votos)</button>
         <div id="newRifaStatus" style="margin-top:12px; padding:12px; border-radius:8px; display:none;"></div>
       </div>
     </div>
@@ -718,12 +718,12 @@ async function saveNewRifa() {
   statusEl.style.background = 'rgba(201,168,76,0.1)';
   statusEl.style.borderLeft = '4px solid #c9a84c';
   statusEl.style.color = '#c9a84c';
-  statusEl.textContent = '⏳ Creando nueva rifa... (borrando votos anteriores)';
+  statusEl.textContent = '⏳ Creando nueva rifa... (borrando TODOS los usuarios y votos anteriores)';
 
   try {
     // 1️⃣ BORRAR TODOS LOS VOTOS DE LA RIFA ANTERIOR
     console.log('🔄 Borrando votos anteriores...');
-    const deleteRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
@@ -732,29 +732,28 @@ async function saveNewRifa() {
       }
     });
 
-    if (!deleteRes.ok) {
-      const err = await deleteRes.text();
-      throw new Error(`No se pudieron borrar votos: ${deleteRes.status} - ${err}`);
+    if (!deleteVotesRes.ok) {
+      const err = await deleteVotesRes.text();
+      throw new Error(`No se pudieron borrar votos: ${deleteVotesRes.status} - ${err}`);
     }
     console.log('✅ Votos borrados');
 
-    // 2️⃣ LIMPIAR voto_actual DE TODOS LOS USUARIOS
-    console.log('🔄 Limpiando estado de usuarios...');
-    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
-      method: 'PATCH',
+    // 2️⃣ BORRAR TODOS LOS USUARIOS - RESET COMPLETO
+    console.log('🔄 Borrando todos los usuarios (reset total)...');
+    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+      method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ voto_actual: null })
+      }
     });
 
-    if (!patchRes.ok) {
-      const err = await patchRes.text();
-      throw new Error(`No se pudo limpiar usuarios: ${patchRes.status} - ${err}`);
+    if (!deleteUsersRes.ok) {
+      const err = await deleteUsersRes.text();
+      throw new Error(`No se pudieron borrar usuarios: ${deleteUsersRes.status} - ${err}`);
     }
-    console.log('✅ Usuarios limpiados');
+    console.log('✅ Todos los usuarios borrados - RESET COMPLETO');
 
     // 3️⃣ GUARDAR NUEVA CONFIGURACION EN LOCALSTORAGE
     console.log('💾 Guardando nueva configuración...');
@@ -774,9 +773,9 @@ async function saveNewRifa() {
     statusEl.style.background = 'rgba(34,197,94,0.1)';
     statusEl.style.borderLeft = '4px solid #22c55e';
     statusEl.style.color = '#22c55e';
-    statusEl.textContent = `✅ ¡Nueva rifa creada! ${team1} vs ${team2} · ${prize}`;
+    statusEl.textContent = `✅ ¡Nueva rifa creada! ${team1} vs ${team2} · ${prize} | Usuarios y votos BORRADOS `;
 
-    console.log('🎉 Nueva rifa lista');
+    console.log('🎉 Nueva rifa lista - RESET COMPLETO');
 
     // Limpiar formulario
     setTimeout(() => {

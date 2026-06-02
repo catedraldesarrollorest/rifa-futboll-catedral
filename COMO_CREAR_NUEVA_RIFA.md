@@ -3,16 +3,18 @@
 ## 🎯 El Problema Que Se Solucionó
 
 **Antes:** Cuando el admin creaba una nueva rifa, los votos VIEJOS seguían apareciendo en Supabase
-- Ejemplo: Rifa 1 tenía 50 votos de "España vs Argentina"
+- Ejemplo: Rifa 1 tenía 50 votos de "España vs Argentina" y 50 usuarios registrados
 - Se creaba Rifa 2 con "Brasil vs México"
 - Pero los 50 votos viejos SEGUÍAN en la base de datos
+- Los 50 usuarios SEGUÍAN registrados
 - Los usuarios que votaron en Rifa 1 aparecían como si votaron en Rifa 2
 
-**Ahora:** ✅ Se borra TODO automáticamente
-- Cuando creas Nueva Rifa, se borran TODOS los votos viejos
-- Se limpia el estado de todos los usuarios
-- Cada usuario puede votar FRESH en la nueva rifa
-- Aunque el email sea el mismo, es como si fuera nuevo
+**Ahora:** ✅ Se borra TODO automáticamente (RESET COMPLETO)
+- Cuando creas Nueva Rifa, se borran **TODOS los votos viejos**
+- Se borran **TODOS los usuarios registrados** (tabla completa vacía)
+- Cada usuario tiene que **registrarse de nuevo** en la nueva rifa
+- Es como si fuera la PRIMERA vez para todos
+- Cada email empieza FRESH sin historial anterior
 
 ---
 
@@ -78,13 +80,17 @@ Cuando haces click en "Crear Nueva Rifa", automáticamente:
 
 1. **Borra TODOS los votos viejos** de la tabla `rifa_votos` en Supabase
    ```
-   DELETE FROM rifa_votos WHERE 1=1
+   DELETE FROM rifa_votos
    ```
+   ✅ Resultado: Tabla de votos VACÍA
 
-2. **Limpia el estado de usuarios** en la tabla `rifa_usuarios`
+2. **Borra TODOS los usuarios** de la tabla `rifa_usuarios` en Supabase
    ```
-   UPDATE rifa_usuarios SET voto_actual = NULL
+   DELETE FROM rifa_usuarios
    ```
+   ✅ Resultado: Tabla de usuarios VACÍA
+   ✅ Los emails y PINs se eliminan completamente
+   ✅ Los usuarios deben registrarse de nuevo
 
 3. **Guarda la nueva configuración** en localStorage:
    - config_team1 = "Brasil"
@@ -98,6 +104,7 @@ Cuando haces click en "Crear Nueva Rifa", automáticamente:
    - Los equipos en las tarjetas de stats cambian
    - El dropdown de "Resultado final" se actualiza
    - La tabla de votos se vacía (0 votos)
+   - La tabla de usuarios se vacía (0 usuarios)
 
 ---
 
@@ -122,26 +129,51 @@ Cuando haces click en "Crear Nueva Rifa", automáticamente:
 ## 📊 Ejemplo Real
 
 ### Rifa 1: España vs Argentina
-- Usuario: juan@email.com votó "Gana España"
-- Usuario: maria@email.com votó "Empate"
-- Total: 50 votos en Supabase
+**Tabla rifa_usuarios:**
+```
+juan@email.com     | PIN: 1234 | voto_actual: home
+maria@email.com    | PIN: 5678 | voto_actual: draw
+carlos@email.com   | PIN: 9012 | voto_actual: away
+```
+
+**Tabla rifa_votos:**
+```
+juan@email.com     | voto: home  | nombre: Juan
+maria@email.com    | voto: draw  | nombre: María
+carlos@email.com   | voto: away  | nombre: Carlos
+... (50 votos más)
+```
 
 ### Admin Crea Rifa 2: Brasil vs México
-- Click en "🎯 Crear Nueva Rifa"
+- Click en "🎯 Crear Nueva Rifa (RESET: Borra todos usuarios y votos)"
 - Espera a que se complete
 
-**Resultado:**
+**Resultado INMEDIATO:**
 ```
-rifa_votos: 0 votos (antes había 50, ahora está VACÍO)
-rifa_usuarios: 
-  - juan@email.com → voto_actual = NULL (antes tenía "home")
-  - maria@email.com → voto_actual = NULL (antes tenía "draw")
+✅ ¡Nueva rifa creada! Brasil vs México | Usuarios y votos BORRADOS
+
+rifa_usuarios: COMPLETAMENTE VACÍA (0 usuarios)
+rifa_votos: COMPLETAMENTE VACÍA (0 votos)
 ```
 
 ### Usuario Juan vuelve a la página:
 - Ve "Brasil vs México" (NO "España vs Argentina")
-- Puede votar de NUEVO
-- No aparece su voto anterior
+- **NO ve su email guardado** (está como si nunca se hubiera registrado)
+- Tiene que **ingresar su email de nuevo** (como si fuera la primera vez)
+- **Obtiene un NUEVO PIN** para esta rifa
+- Puede votar FRESH sin historial anterior
+
+---
+
+## ✅ Lo Que Se Arregló
+
+✅ **Reset completo** - Se borran TODOS los votos viejos en `rifa_votos`
+✅ **Usuarios se reinician** - Se borra la tabla `rifa_usuarios` completa
+✅ **Cada usuario empieza fresh** - Aunque tengan el mismo email, deben registrarse nuevamente
+✅ **Nuevos PINs** - Cada usuario obtiene un PIN diferente en la nueva rifa
+✅ **Equipos dinámicos** - No están hardcodeados a "España/Argentina"
+✅ **UI actualizada** - Admin panel muestra los equipos reales
+✅ **Mensajes claros** - Ves si funcionó o hubo error con mensajes visuales
 
 ---
 
