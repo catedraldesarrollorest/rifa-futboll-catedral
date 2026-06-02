@@ -1107,8 +1107,10 @@ async function handleLogin(e) {
       localStorage.removeItem('rf_previous_vote');
       document.getElementById('loginEmail').value = '';
       hideLogin();
-      console.log('📍 Ir a step 2 (nuevos usuarios)');
+      console.log('📍 ANTES DE goStep(2)');
+      console.log('📍 rf_previous_vote:', localStorage.getItem('rf_previous_vote'));
       goStep(2);
+      console.log('📍 DESPUÉS DE goStep(2)');
       return;
     } else {
       console.log('👤 USUARIO EXISTENTE:', users[0]);
@@ -1241,6 +1243,8 @@ const voteLabels = {
 };
 
 function confirmExistingVote() {
+  console.log('🚨 confirmExistingVote() EJECUTADA');
+  console.log('🚨 Stack trace:', new Error().stack);
   const voteText = localStorage.getItem('rf_previous_vote');
   const vLabel = voteLabels[voteText]?.(CONFIG.team1, CONFIG.team2) || voteText;
 
