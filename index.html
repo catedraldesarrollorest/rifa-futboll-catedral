@@ -1105,7 +1105,7 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_email', email);
       localStorage.setItem('rf_user_pin', newPin);
       localStorage.setItem('rf_previous_vote', null);
-      document.querySelector('.login-form').reset();
+      document.getElementById('loginEmail').value = '';
       hideLogin();
       console.log('📍 Ir a step 2 (nuevos usuarios)');
       goStep(2);
@@ -1118,7 +1118,7 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_email', user.email);
       localStorage.setItem('rf_user_pin', user.pin);
       localStorage.setItem('rf_previous_vote', user.voto_actual || null);
-      document.querySelector('.login-form').reset();
+      document.getElementById('loginEmail').value = '';
       hideLogin();
 
       // Si ya votó: mostrar pantalla de bienvenida
@@ -1134,9 +1134,11 @@ async function handleLogin(e) {
         localStorage.setItem('rf_isReturning', 'true');
         console.log('📍 Ir a step 2b (devolviendo con voto)');
         goStep('step2b');
+        return;
       } else {
         console.log('📍 Ir a step 2 (devolviendo sin voto)');
         goStep(2);
+        return;
       }
     }
 
