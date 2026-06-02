@@ -544,7 +544,35 @@ function showDashboard() {
   document.getElementById('dashboard').classList.add('active');
 }
 
-function getConfig() {
+async function getConfig() {
+  try {
+    // Intentar leer de Supabase primero
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const config = data[0];
+        return {
+          team1: config.team1 || 'España',
+          team2: config.team2 || 'Argentina',
+          flag1: config.flag1 || '🇪🇸',
+          flag2: config.flag2 || '🇦🇷',
+          date: config.match_date || '',
+          prize: config.prize || '$50 en consumo'
+        };
+      }
+    }
+  } catch (err) {
+    console.log('⚠️ No se pudo leer config de Supabase, usando localStorage:', err);
+  }
+
+  // Respaldo: usar localStorage
   return {
     team1: localStorage.getItem('config_team1') || 'España',
     team2: localStorage.getItem('config_team2') || 'Argentina',
@@ -587,7 +615,7 @@ async function loadVotes() {
     });
 
     voteData = await res.json();
-    const config = getConfig();
+    const config = await getConfig();
 
     // Actualizar stats
     const total = voteData.length;
@@ -755,15 +783,39 @@ async function saveNewRifa() {
     }
     console.log('✅ Todos los usuarios borrados - RESET COMPLETO');
 
-    // 3️⃣ GUARDAR NUEVA CONFIGURACION EN LOCALSTORAGE
-    console.log('💾 Guardando nueva configuración...');
+    // 3️⃣ GUARDAR NUEVA CONFIGURACION EN SUPABASE
+    console.log('💾 Guardando nueva configuración en Supabase...');
+    const updateConfigRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        team1: team1,
+        team2: team2,
+        flag1: flag1,
+        flag2: flag2,
+        match_date: dateStr,
+        prize: prize,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!updateConfigRes.ok) {
+      const err = await updateConfigRes.text();
+      throw new Error(`No se pudo guardar configuración: ${updateConfigRes.status} - ${err}`);
+    }
+    console.log('✅ Configuración guardada en Supabase');
+
+    // También guardar en localStorage como respaldo
     localStorage.setItem('config_team1', team1);
     localStorage.setItem('config_team2', team2);
     localStorage.setItem('config_flag1', flag1);
     localStorage.setItem('config_flag2', flag2);
     localStorage.setItem('config_date', dateStr);
     localStorage.setItem('config_prize', prize);
-    console.log('✅ Configuración guardada');
 
     // 4️⃣ RECARGAR VOTOS (DEBERÍA ESTAR VACÍO)
     console.log('🔄 Recargando interfaz...');
