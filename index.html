@@ -1148,82 +1148,107 @@ async function submitVote() {
   const name = document.getElementById('voterName').value.trim();
   if(!selectedVote || !name) return;
 
-  const userId = localStorage.getItem('rf_user_id');
   const userEmail = localStorage.getItem('rf_user_email');
-  const previousVote = localStorage.getItem('rf_previous_vote');
 
   try {
-    console.log('💾 Guardando voto...');
-    const now = new Date().toISOString();
-    console.log('⏰ Timestamp:', now);
+    console.log('💾 Procesando voto...');
 
-    // Nuevo voto (primero SIEMPRE es nuevo)
-    console.log('➕ Insertando voto para:', userEmail);
-    const votoData = {
-      email: userEmail,
-      nombre: name,
-      voto: selectedVote
-    };
-    console.log('📤 Datos a enviar:', votoData);
+    // Verificar si el usuario YA tiene un voto
+    console.log('🔍 Buscando voto anterior de:', userEmail);
+    const existingVotes = await fetch(
+      `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+    const votes = await existingVotes.json();
+    const hasVote = Array.isArray(votes) && votes.length > 0;
+    console.log(`${hasVote ? '✏️ Usuario ya votó' : '✨ Primer voto'}`);
 
-    const postRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(votoData)
-    });
+    if (hasVote) {
+      // ACTUALIZAR voto existente
+      console.log('🔄 Actualizando voto...');
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            voto: selectedVote,
+            nombre: name
+          })
+        }
+      );
+      if (!updateRes.ok) {
+        const err = await updateRes.text();
+        throw new Error(`No se pudo actualizar: ${updateRes.status} - ${err}`);
+      }
+      console.log('✅ Voto actualizado');
+    } else {
+      // CREAR nuevo voto
+      console.log('➕ Creando primer voto...');
+      const createRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_votos`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            nombre: name,
+            voto: selectedVote
+          })
+        }
+      );
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        throw new Error(`No se pudo guardar: ${createRes.status} - ${err}`);
+      }
+      console.log('✅ Voto creado');
 
-    const postStatus = postRes.status;
-    const postText = await postRes.text();
-    console.log(`📨 Respuesta POST: ${postStatus}`, postText);
-
-    if(!postRes.ok) {
-      throw new Error(`POST rifa_votos falló: ${postStatus} ${postRes.statusText} - ${postText}`);
+      // Marcar usuario como votado
+      console.log('🔄 Actualizando estado...');
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ votado: true, voto_actual: selectedVote })
+        }
+      );
     }
-    console.log('✅ Voto guardado en rifa_votos');
 
-    // Actualizar usuario como votado
-    console.log('🔄 Actualizando estado usuario...');
-    const userData = {
-      votado: true,
-      voto_actual: selectedVote
-    };
-    console.log('📤 Datos usuario:', userData);
-
-    const userRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(userData)
-    });
-
-    const userStatus = userRes.status;
-    const userText = await userRes.text();
-    console.log(`📨 Respuesta PATCH usuario: ${userStatus}`, userText);
-
-    if(!userRes.ok) throw new Error(`PATCH usuario falló: ${userStatus} ${userRes.statusText}`);
-    console.log('✅ Estado usuario actualizado');
-
-    // Guarda en localStorage también
+    // Guardar en localStorage
     localStorage.setItem('rf_last_vote', selectedVote);
+    localStorage.setItem('rf_previous_vote', selectedVote);
 
-    // Actualiza confirmación
-    document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
+    // Mostrar confirmación
+    document.getElementById('confirmName').textContent = hasVote
+      ? `¡Voto actualizado, ${name}! ✨`
+      : `¡Suerte, ${name}! 🤞`;
     const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
     document.getElementById('tkt-vote').textContent = vLabel;
     document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
 
     goStep(4);
     launchConfetti();
-    console.log('🎉 Confirmación lista');
+    console.log('🎉 Listo');
   } catch(err) {
-    console.error('❌ Error al guardar voto:', err);
+    console.error('❌ Error:', err);
     alert('❌ Error: ' + err.message);
   }
 }
