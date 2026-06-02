@@ -474,10 +474,21 @@ let voteData = [];
 function handleAdminLogin(e) {
   e.preventDefault();
 
-  // Por ahora: entrar sin validar PIN
-  sessionStorage.setItem('adminLogged', 'true');
-  showDashboard();
-  loadVotes();
+  try {
+    alert('1. Guardando sesión...');
+    sessionStorage.setItem('adminLogged', 'true');
+
+    alert('2. Mostrando dashboard...');
+    showDashboard();
+
+    alert('3. Cargando votos...');
+    loadVotes();
+
+    alert('✅ ¡Listo!');
+  } catch(err) {
+    alert('❌ Error: ' + err.message);
+    console.error(err);
+  }
 }
 
 function logout() {
