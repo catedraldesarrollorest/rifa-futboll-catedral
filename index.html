@@ -1105,9 +1105,11 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_email', email);
       localStorage.setItem('rf_user_pin', newPin);
       localStorage.setItem('rf_previous_vote', null);
+      document.querySelector('.login-form').reset();
       hideLogin();
       console.log('📍 Ir a step 2 (nuevos usuarios)');
       goStep(2);
+      return;
     } else {
       console.log('👤 USUARIO EXISTENTE:', users[0]);
       // Usuario existente
@@ -1116,6 +1118,7 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_email', user.email);
       localStorage.setItem('rf_user_pin', user.pin);
       localStorage.setItem('rf_previous_vote', user.voto_actual || null);
+      document.querySelector('.login-form').reset();
       hideLogin();
 
       // Si ya votó: mostrar pantalla de bienvenida
