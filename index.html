@@ -1050,6 +1050,13 @@ async function handleLogin(e) {
     return;
   }
 
+  // Limpiar datos antiguos del localStorage
+  localStorage.removeItem('rf_user_id');
+  localStorage.removeItem('rf_user_email');
+  localStorage.removeItem('rf_user_pin');
+  localStorage.removeItem('rf_previous_vote');
+  localStorage.removeItem('rf_isReturning');
+
   try {
     // Buscar usuario en Supabase
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
@@ -1074,7 +1081,8 @@ async function handleLogin(e) {
         body: JSON.stringify({
           email: email,
           pin: newPin,
-          activo: true
+          activo: true,
+          voto_actual: null
         })
       });
 
