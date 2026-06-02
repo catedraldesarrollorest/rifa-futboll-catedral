@@ -1257,7 +1257,7 @@ function confirmExistingVote() {
   document.getElementById('tkt-vote').textContent = vLabel;
   document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
 
-  goStep(4);
+  goStep(5);
   launchConfetti();
   console.log('✅ Voto confirmado sin cambios');
 }
@@ -1362,7 +1362,7 @@ async function submitVote() {
     document.getElementById('tkt-vote').textContent = vLabel;
     document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
 
-    goStep(4);
+    goStep(5);
     launchConfetti();
     console.log('🎉 Listo');
   } catch(err) {
