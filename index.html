@@ -1109,7 +1109,7 @@ async function handleLogin(e) {
         document.getElementById('wb-current-vote').textContent = voteLabel;
         localStorage.setItem('rf_isReturning', 'true');
         console.log('📍 Ir a step 2b (devolviendo con voto)');
-        goStep('2b');
+        goStep('step2b');
       } else {
         console.log('📍 Ir a step 2 (devolviendo sin voto)');
         goStep(2);
