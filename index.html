@@ -1153,9 +1153,12 @@ async function submitVote() {
   const previousVote = localStorage.getItem('rf_previous_vote');
 
   try {
+    console.log('💾 Guardando voto...');
+
     // Si ya votó: actualizar voto
     if(previousVote) {
-      await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`, {
+      console.log('🔄 Actualizando voto anterior...');
+      const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`, {
         method: 'PATCH',
         headers: {
           'apikey': SUPABASE_KEY,
@@ -1168,9 +1171,12 @@ async function submitVote() {
           timestamp: new Date().toISOString()
         })
       });
+      if(!patchRes.ok) throw new Error(`PATCH falló: ${patchRes.status} ${patchRes.statusText}`);
+      console.log('✅ Voto actualizado');
     } else {
       // Nuevo voto
-      await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+      console.log('➕ Insertando nuevo voto...');
+      const postRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
@@ -1180,15 +1186,19 @@ async function submitVote() {
         body: JSON.stringify({
           email: userEmail,
           nombre: name,
-          team1: CONFIG.team1,
-          team2: CONFIG.team2,
           voto: selectedVote,
           timestamp: new Date().toISOString()
         })
       });
+      if(!postRes.ok) {
+        const errText = await postRes.text();
+        throw new Error(`POST rifa_votos falló: ${postRes.status} ${postRes.statusText} - ${errText}`);
+      }
+      console.log('✅ Voto guardado');
 
       // Actualizar usuario como votado
-      await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=eq.${userId}`, {
+      console.log('🔄 Actualizando estado usuario...');
+      const userRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=eq.${userId}`, {
         method: 'PATCH',
         headers: {
           'apikey': SUPABASE_KEY,
@@ -1201,6 +1211,8 @@ async function submitVote() {
           ultima_votacion: new Date().toISOString()
         })
       });
+      if(!userRes.ok) throw new Error(`PATCH usuario falló: ${userRes.status} ${userRes.statusText}`);
+      console.log('✅ Estado actualizado');
     }
 
     // Guarda en localStorage también
@@ -1214,9 +1226,10 @@ async function submitVote() {
 
     goStep(4);
     launchConfetti();
+    console.log('🎉 Confirmación lista');
   } catch(err) {
-    console.error('Error al guardar voto:', err);
-    alert('Error al guardar tu voto. Intenta de nuevo.');
+    console.error('❌ Error al guardar voto:', err);
+    alert('❌ Error: ' + err.message);
   }
 }
 
