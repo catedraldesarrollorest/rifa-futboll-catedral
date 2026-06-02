@@ -385,6 +385,32 @@ body {
     <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
   </div>
 
+  <!-- CONTADOR REGRESIVO -->
+  <div class="card" style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(34,197,94,0.05));border:1px solid rgba(34,197,94,0.3);grid-column:1/-1;padding:32px;">
+    <h3 style="color:#22c55e;margin-bottom:16px;">⏱️ Tiempo hasta inicio del partido</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center;">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--crema);" id="countDays">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Días</div>
+      </div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--crema);" id="countHours">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Horas</div>
+      </div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--crema);" id="countMinutes">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Minutos</div>
+      </div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--crema);" id="countSeconds">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Segundos</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <p style="margin:0;font-size:0.9rem;color:var(--muted);" id="votingStatusText">Votación abierta ✓</p>
+    </div>
+  </div>
+
   <!-- STATS -->
   <div class="dash-grid">
     <div class="card">
@@ -519,6 +545,69 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let voteData = [];
 
+// ── CONTADOR REGRESIVO ────────────────────────────────────────────────
+function parseMatchTime(dateStr) {
+  try {
+    dateStr = dateStr.replace(/[·]/g, '').trim();
+    const date = new Date();
+    const currentYear = date.getFullYear();
+
+    const dayMonthMatch = dateStr.match(/(\d{1,2})\s+([a-zA-Z]{3})/i);
+    if(!dayMonthMatch) return null;
+
+    const day = parseInt(dayMonthMatch[1]);
+    const monthStr = dayMonthMatch[2];
+    const months = {
+      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+    };
+    const month = months[monthStr.toLowerCase()];
+
+    const timeMatch = dateStr.match(/(\d{1,2}):(\d{2})/);
+    if(!timeMatch) return null;
+
+    const hour = parseInt(timeMatch[1]);
+    const minute = parseInt(timeMatch[2]);
+
+    return new Date(currentYear, month, day, hour, minute, 0);
+  } catch(e) {
+    return null;
+  }
+}
+
+function updateCountdown() {
+  const dateStr = localStorage.getItem('config_date') || '14 Jun · 21:00h';
+  const matchTime = parseMatchTime(dateStr);
+
+  if(!matchTime) {
+    document.getElementById('votingStatusText').textContent = 'Configuración de hora no válida';
+    return;
+  }
+
+  const now = new Date();
+  const diff = matchTime - now;
+
+  if(diff <= 0) {
+    document.getElementById('countDays').textContent = '0';
+    document.getElementById('countHours').textContent = '0';
+    document.getElementById('countMinutes').textContent = '0';
+    document.getElementById('countSeconds').textContent = '0';
+    document.getElementById('votingStatusText').textContent = '⏱️ Votación cerrada - Partido en curso';
+    return;
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  document.getElementById('countDays').textContent = days;
+  document.getElementById('countHours').textContent = String(hours).padStart(2, '0');
+  document.getElementById('countMinutes').textContent = String(minutes).padStart(2, '0');
+  document.getElementById('countSeconds').textContent = String(seconds).padStart(2, '0');
+  document.getElementById('votingStatusText').textContent = '✓ Votación abierta';
+}
+
 function handleAdminLogin(e) {
   e.preventDefault();
 
@@ -555,6 +644,7 @@ function logout() {
 function showDashboard() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').classList.add('active');
+  updateCountdown();
 }
 
 async function loadVotes() {
@@ -750,6 +840,7 @@ async function saveNewRifa() {
     alert('✅ Nueva rifa iniciada!\n\nLos datos se actualizarán en la página principal.\nRecarga para ver los cambios.');
 
     closeNewRifaModal();
+    updateCountdown();
     loadVotes();
   } catch(err) {
     console.error('❌ Error:', err);
@@ -771,5 +862,15 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(err) {
     console.error('❌ Error en inicialización:', err);
   }
+
+  // Actualizar contador cada segundo
+  setInterval(updateCountdown, 1000);
+
+  // Escuchar cambios de configuración
+  window.addEventListener('storage', function(e) {
+    if(e.key && e.key.startsWith('config_')) {
+      updateCountdown();
+    }
+  });
 });
 </script>

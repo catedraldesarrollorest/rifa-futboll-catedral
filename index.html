@@ -913,6 +913,11 @@ h1.main-title span { color: var(--oro); }
 
     <button class="btn-vote" id="btnVote" onclick="submitVote()">🎯 Enviar mi voto</button>
 
+    <div id="votingStatus" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-top:16px;text-align:center;color:#fca5a5;">
+      <p style="margin:0;font-weight:700;">⏱️ Votación cerrada</p>
+      <p style="margin:8px 0 0 0;font-size:0.9rem;">El partido ha comenzado. No se pueden registrar nuevos votos para esta rifa.</p>
+    </div>
+
     <div class="vote-rules">
       <strong>Reglas:</strong> Un voto por persona · Las votaciones cierran al inicio del partido · Entre los acertantes se hace un sorteo aleatorio en directo · El premio se recoge en el restaurante.
     </div>
@@ -1309,6 +1314,12 @@ function confirmExistingVote() {
 }
 
 async function submitVote() {
+  // Validar que votación esté abierta
+  if(!isVotingOpen()) {
+    alert('⏱️ Lo sentimos, el tiempo de votación para este partido ha terminado.\n\nEl partido ha comenzado y no se pueden registrar nuevos votos.');
+    return;
+  }
+
   const name = document.getElementById('voterName').value.trim();
   if(!selectedVote || !name) return;
 
@@ -1452,15 +1463,122 @@ const style = document.createElement('style');
 style.textContent=`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`;
 document.head.appendChild(style);
 
+// ── VALIDACIÓN DE TIEMPO DE VOTACIÓN ──────────────────────────────────
+let votingOpen = true;
+
+function parseMatchTime(dateStr) {
+  // Parsear formato: "14 Jun · 21:00h" o "14 Jun · 21:00"
+  // Asume el año actual
+  try {
+    // Limpiar el string
+    dateStr = dateStr.replace(/[·]/g, '').trim();
+
+    // Intenta varios formatos
+    const date = new Date();
+    const currentYear = date.getFullYear();
+
+    // Buscar día y mes
+    const dayMonthMatch = dateStr.match(/(\d{1,2})\s+([a-zA-Z]{3})/i);
+    if(!dayMonthMatch) return null;
+
+    const day = parseInt(dayMonthMatch[1]);
+    const monthStr = dayMonthMatch[2];
+    const months = {
+      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+    };
+    const month = months[monthStr.toLowerCase()];
+
+    // Buscar hora
+    const timeMatch = dateStr.match(/(\d{1,2}):(\d{2})/);
+    if(!timeMatch) return null;
+
+    const hour = parseInt(timeMatch[1]);
+    const minute = parseInt(timeMatch[2]);
+
+    return new Date(currentYear, month, day, hour, minute, 0);
+  } catch(e) {
+    console.error('Error parsing match time:', e);
+    return null;
+  }
+}
+
+function isVotingOpen() {
+  const dateStr = CONFIG.date || localStorage.getItem('config_date');
+  const matchTime = parseMatchTime(dateStr);
+
+  if(!matchTime) {
+    console.warn('No valid match time configured');
+    return true; // Permitir votación si no hay fecha válida
+  }
+
+  const now = new Date();
+  return now < matchTime;
+}
+
+function getTimeUntilMatch() {
+  const dateStr = CONFIG.date || localStorage.getItem('config_date');
+  const matchTime = parseMatchTime(dateStr);
+
+  if(!matchTime) return null;
+
+  const now = new Date();
+  const diff = matchTime - now;
+
+  if(diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return { days, hours, minutes, seconds, expired: false };
+}
+
+function updateVotingStatus() {
+  votingOpen = isVotingOpen();
+
+  // Actualizar estado visual en botones
+  const btnVote = document.getElementById('btnVote');
+  const votingStatus = document.getElementById('votingStatus');
+
+  if(!votingOpen) {
+    if(btnVote) {
+      btnVote.disabled = true;
+      btnVote.style.opacity = '0.5';
+      btnVote.style.cursor = 'not-allowed';
+    }
+    if(votingStatus) {
+      votingStatus.style.display = 'block';
+    }
+  } else {
+    if(btnVote) {
+      btnVote.disabled = false;
+      btnVote.style.opacity = '1';
+      btnVote.style.cursor = 'pointer';
+    }
+    if(votingStatus) {
+      votingStatus.style.display = 'none';
+    }
+  }
+}
+
 // ── INICIALIZACIÓN ────────────────────────────────────────────────────
 // Cargar configuración al iniciar
 updateConfigFromStorage();
+
+// Verificar estado de votación al iniciar y cada segundo
+updateVotingStatus();
+setInterval(updateVotingStatus, 1000);
 
 // Escuchar cambios en localStorage (desde admin)
 window.addEventListener('storage', function(e) {
   if(e.key && e.key.startsWith('config_')) {
     console.log('🔄 Configuración actualizada desde admin');
     updateConfigFromStorage();
+    updateVotingStatus();
   }
 });
 </script>
