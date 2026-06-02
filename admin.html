@@ -479,9 +479,7 @@ function handleAdminLogin(e) {
   // PINs especiales para cada admin (diferente al PIN de usuarios)
   const ADMIN_PINS = ['5555', '5556', '5557']; // Amalia, Abelito, Frank
 
-  console.log('PIN ingresado:', pin, 'Longitud:', pin.length, 'Tipo:', typeof pin);
-  console.log('PINs válidos:', ADMIN_PINS);
-  console.log('¿Coincide?:', ADMIN_PINS.includes(pin));
+  alert('PIN: [' + pin + '] Longitud: ' + pin.length);
 
   if(!pin) {
     errorEl.textContent = 'Por favor ingresa tu PIN admin';
