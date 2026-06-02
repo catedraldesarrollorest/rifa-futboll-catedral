@@ -957,16 +957,62 @@ h1.main-title span { color: var(--oro); }
 
 <script>
 // ── CONFIGURACIÓN ─────────────────────────────────────────────────
-// Edita estos datos antes de imprimir el QR
-const CONFIG = {
-  team1:  "España",
-  team2:  "Argentina",
-  flag1:  "🇪🇸",
-  flag2:  "🇦🇷",
-  date:   "14 Jun · 21:00h",
-  prize:  "Cena para 2 personas",
+// CONFIG: Lee del localStorage si existe (actualizado por admin), sino usa valores por defecto
+let CONFIG = {
+  team1:  localStorage.getItem('config_team1') || "España",
+  team2:  localStorage.getItem('config_team2') || "Argentina",
+  flag1:  localStorage.getItem('config_flag1') || "🇪🇸",
+  flag2:  localStorage.getItem('config_flag2') || "🇦🇷",
+  date:   localStorage.getItem('config_date') || "14 Jun · 21:00h",
+  prize:  localStorage.getItem('config_prize') || "Cena para 2 personas",
   group:  "H",
 };
+
+// Función para actualizar CONFIG desde localStorage
+function updateConfigFromStorage() {
+  CONFIG.team1 = localStorage.getItem('config_team1') || "España";
+  CONFIG.team2 = localStorage.getItem('config_team2') || "Argentina";
+  CONFIG.flag1 = localStorage.getItem('config_flag1') || "🇪🇸";
+  CONFIG.flag2 = localStorage.getItem('config_flag2') || "🇦🇷";
+  CONFIG.date = localStorage.getItem('config_date') || "14 Jun · 21:00h";
+  CONFIG.prize = localStorage.getItem('config_prize') || "Cena para 2 personas";
+
+  // Actualizar elementos HTML con nuevos valores
+  updatePageConfig();
+}
+
+// Actualizar todos los elementos de la página con CONFIG actual
+function updatePageConfig() {
+  // Step 1
+  const s1prize = document.getElementById('s1prize');
+  const s1flag1 = document.getElementById('s1flag1');
+  const s1flag2 = document.getElementById('s1flag2');
+  if(s1prize) s1prize.textContent = CONFIG.prize;
+  if(s1flag1) s1flag1.textContent = CONFIG.flag1;
+  if(s1flag2) s1flag2.textContent = CONFIG.flag2;
+
+  // Step 3
+  const flag1 = document.getElementById('flag1');
+  const tname1 = document.getElementById('tname1');
+  const flag2 = document.getElementById('flag2');
+  const tname2 = document.getElementById('tname2');
+  if(flag1) flag1.textContent = CONFIG.flag1;
+  if(tname1) tname1.textContent = CONFIG.team1;
+  if(flag2) flag2.textContent = CONFIG.flag2;
+  if(tname2) tname2.textContent = CONFIG.team2;
+
+  // Vote buttons
+  const vbFlag1 = document.getElementById('vb-flag1');
+  const vbFlag2 = document.getElementById('vb-flag2');
+  if(vbFlag1) vbFlag1.textContent = CONFIG.flag1;
+  if(vbFlag2) vbFlag2.textContent = CONFIG.flag2;
+
+  // Ticket
+  const tktPrize = document.getElementById('tkt-prize');
+  if(tktPrize) tktPrize.textContent = CONFIG.prize;
+
+  console.log('✅ Página actualizada con nueva configuración:', CONFIG);
+}
 
 // ── ADMIN CONFIG ────────────────────────────────────────────────────
 const ADMIN_PHONES = ['+5358416293', '+5355162840', '+5358867972']; // Amalia, Abelito, Frank
@@ -1405,6 +1451,18 @@ function launchConfetti() {
 const style = document.createElement('style');
 style.textContent=`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`;
 document.head.appendChild(style);
+
+// ── INICIALIZACIÓN ────────────────────────────────────────────────────
+// Cargar configuración al iniciar
+updateConfigFromStorage();
+
+// Escuchar cambios en localStorage (desde admin)
+window.addEventListener('storage', function(e) {
+  if(e.key && e.key.startsWith('config_')) {
+    console.log('🔄 Configuración actualizada desde admin');
+    updateConfigFromStorage();
+  }
+});
 </script>
 </body>
 </html>
