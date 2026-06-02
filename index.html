@@ -755,13 +755,20 @@ h1.main-title span { color: var(--oro); }
 <div class="login-modal" id="loginModal">
   <div class="login-box">
     <h3>Inicia sesión</h3>
-    <p>Ingresa tu email y PIN para participar</p>
+    <p>Completa tus datos para participar</p>
     <form class="login-form" onsubmit="handleLogin(event)">
-      <input type="email" id="loginEmail" placeholder="Tu email" required />
-      <input type="password" id="loginPin" placeholder="PIN (1010)" maxlength="4" required />
-      <button type="submit" class="btn-login">Entrar →</button>
+      <div style="text-align:left;margin-bottom:12px;">
+        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu email</label>
+        <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required style="width:100%;"/>
+      </div>
+      <div style="text-align:left;margin-bottom:12px;">
+        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">PIN (1010)</label>
+        <input type="password" id="loginPin" placeholder="****" maxlength="4" required style="width:100%;font-size:1.5rem;letter-spacing:8px;text-align:center;"/>
+      </div>
+      <button type="submit" class="btn-login">Entrar a participar →</button>
     </form>
     <div class="login-error" id="loginError"></div>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:16px;">💡 PIN por defecto: 1010</p>
   </div>
 </div>
 
@@ -1014,11 +1021,17 @@ function hideLogin() {
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pin = document.getElementById('loginPin').value;
+  const pin = document.getElementById('loginPin').value.trim();
   const errorEl = document.getElementById('loginError');
 
-  if(!email || pin !== '1010') {
-    errorEl.textContent = 'Email o PIN incorrectos';
+  if(!email) {
+    errorEl.textContent = 'Por favor ingresa tu email';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if(pin !== '1010') {
+    errorEl.textContent = 'PIN incorrecto (es 1010)';
     errorEl.style.display = 'block';
     return;
   }
