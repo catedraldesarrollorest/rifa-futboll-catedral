@@ -842,6 +842,24 @@ h1.main-title span { color: var(--oro); }
   <p class="skip-link" onclick="goStep(3)">Ya soy miembro, saltar este paso</p>
 </div>
 
+<!-- ══ STEP 2B: BIENVENIDO DE VUELTA ══ -->
+<div class="step" id="step2b">
+  <h2>¡Bienvenido<br><span>de vuelta!</span></h2>
+  <p class="subtitle">Vemos que ya votaste. ¿Deseas cambiar tu predicción?</p>
+
+  <div class="welcome-back-card" style="background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.03)); border: 1px solid rgba(201,168,76,0.25); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+    <div style="margin: 12px 0;">
+      <div style="font-size: 0.8rem; color: #7a7060; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Tu voto actual:</div>
+      <div style="font-size: 2rem; font-weight: 700; color: #c9a84c; margin-bottom: 12px;" id="wb-current-vote">—</div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <button class="btn-continue" onclick="goStep(3)">Cambiar mi voto →</button>
+    <button class="btn-continue" style="background: transparent; border: 1px solid rgba(201,168,76,0.25); color: #f5f0e8;" onclick="confirmExistingVote()">Mantener mi voto ✓</button>
+  </div>
+</div>
+
 <!-- ══ STEP 3: VOTA ══ -->
 <div class="step" id="step3">
   <div class="vote-header">
@@ -958,8 +976,8 @@ const ADMIN_BOT_PHONE = '14155238886'; // Twilio Sandbox
 let currentStep = 1;
 let joinedWa = false, joinedIg = false;
 let selectedVote = null;
-const steps = [null, 'step1','step2','step3','step4'];
-const progress = [null, 25, 50, 75, 100];
+const steps = [null, 'step1','step2','step2b','step3','step4'];
+const progress = [null, 25, 50, 50, 75, 100];
 
 // ── ADMIN DETECTION ───────────────────────────────────────────────
 function checkAdminAccess() {
@@ -1071,7 +1089,22 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_pin', user.pin);
       localStorage.setItem('rf_previous_vote', user.voto_actual);
       hideLogin();
-      goStep(2);
+
+      // Si ya votó: mostrar pantalla de bienvenida
+      if(user.votado && user.voto_actual) {
+        console.log('👋 Usuario devolviendo, ya tiene voto:', user.voto_actual);
+        const voteLabel = {
+          'home': `Gana ${CONFIG.team1}`,
+          'draw': 'Empate',
+          'away': `Gana ${CONFIG.team2}`
+        }[user.voto_actual] || user.voto_actual;
+
+        document.getElementById('wb-current-vote').textContent = voteLabel;
+        localStorage.setItem('rf_isReturning', 'true');
+        goStep('2b');
+      } else {
+        goStep(2);
+      }
     }
 
     errorEl.style.display = 'none';
@@ -1084,14 +1117,19 @@ async function handleLogin(e) {
 
 // ── NAVEGACIÓN ────────────────────────────────────────────────────
 function goStep(n) {
-  document.getElementById(steps[currentStep]).classList.remove('active');
-  currentStep = n;
-  const el = document.getElementById(steps[n]);
-  el.classList.add('active');
-  el.scrollTop = 0;
+  const stepName = typeof n === 'string' ? n : steps[n];
+  const stepIndex = typeof n === 'string' ? steps.indexOf(n) : n;
+
+  document.getElementById(steps[currentStep])?.classList.remove('active');
+  currentStep = stepIndex;
+  const el = document.getElementById(stepName);
+  if(el) {
+    el.classList.add('active');
+    el.scrollTop = 0;
+  }
   window.scrollTo(0,0);
-  document.getElementById('progressFill').style.width = progress[n] + '%';
-  document.getElementById('backBtn').classList.toggle('visible', n > 1 && n < 4);
+  document.getElementById('progressFill').style.width = progress[stepIndex] + '%';
+  document.getElementById('backBtn').classList.toggle('visible', stepIndex > 1 && stepIndex < 5);
 }
 
 function goBack() {
@@ -1143,6 +1181,24 @@ const voteLabels = {
   draw: ()    => 'Empate',
   away: (t2)  => `Gana ${t2}`,
 };
+
+function confirmExistingVote() {
+  const voteText = localStorage.getItem('rf_previous_vote');
+  const vLabel = voteLabels[voteText]?.(CONFIG.team1, CONFIG.team2) || voteText;
+
+  // Mostrar confirmación
+  document.getElementById('confirmName').textContent = '¡Tu voto se mantuvo!';
+  const msgEl = document.createElement('p');
+  msgEl.textContent = `Tu predicción de ${vLabel} ya está registrada.`;
+  msgEl.style.cssText = 'color: #7a7060; margin: 8px 0;';
+
+  document.getElementById('tkt-vote').textContent = vLabel;
+  document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
+
+  goStep(4);
+  launchConfetti();
+  console.log('✅ Voto confirmado sin cambios');
+}
 
 async function submitVote() {
   const name = document.getElementById('voterName').value.trim();
