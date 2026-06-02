@@ -47,7 +47,7 @@ body::before {
 .page { position: relative; z-index: 1; }
 
 /* ── STEPS ── */
-.step { display: none; min-height: 100vh; flex-direction: column; opacity: 0; }
+.step { display: none; min-height: 100vh; flex-direction: column; opacity: 0; padding-top: 60px; }
 .step.active { display: flex; opacity: 1; transition: opacity 200ms var(--ease-out); }
 
 /* ══════════════════════════════════════
@@ -645,7 +645,77 @@ h1.main-title span { color: var(--oro); }
   transition: width 0.4s ease;
 }
 
-/* ── BACK BTN ── */
+/* ── MODAL LOGIN ── */
+.login-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(10,10,8,0.9);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-modal.active { display: flex; }
+.login-box {
+  background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.03));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.3s var(--ease-out);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.login-box h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.login-box p {
+  font-size: 0.85rem;
+  color: rgba(245,240,232,0.6);
+  margin-bottom: 24px;
+}
+.login-form { display: flex; flex-direction: column; gap: 12px; }
+.login-form input {
+  background: rgba(245,240,232,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--crema);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  transition: border-color 150ms var(--ease-out);
+}
+.login-form input:focus { outline: none; border-color: var(--oro); }
+.login-form input::placeholder { color: rgba(245,240,232,0.3); }
+.btn-login {
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--oro), var(--oro-dark));
+  color: var(--negro);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  margin-top: 8px;
+}
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-login:not(:disabled):hover { transform: translateY(-2px); }
+}
+.btn-login:active:not(:disabled) { transform: scale(0.97); }
+.login-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 12px;
+  display: none;
+}
 .back-btn {
   position: fixed; top: 16px; left: 16px;
   width: 38px; height: 38px;
@@ -681,6 +751,22 @@ h1.main-title span { color: var(--oro); }
   </a>
 </div>
 
+<!-- LOGIN MODAL -->
+<div class="login-modal" id="loginModal">
+  <div class="login-box">
+    <h3>Únete a la Rifa</h3>
+    <p>Ingresa tu email para participar</p>
+    <form class="login-form" onsubmit="handleLogin(event)">
+      <div style="text-align:left;margin-bottom:12px;">
+        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu email</label>
+        <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required style="width:100%;" autofocus/>
+      </div>
+      <button type="submit" class="btn-login">Continuar →</button>
+    </form>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
 <div class="page">
 
 <!-- ══ STEP 1: BIENVENIDA ══ -->
@@ -708,7 +794,7 @@ h1.main-title span { color: var(--oro); }
     </div>
   </div>
 
-  <button class="btn-start" onclick="goStep(2)">¡Quiero participar! →</button>
+  <button class="btn-start" onclick="showLogin()">¡Quiero participar! →</button>
   <p class="rules-hint">Gratis · Solo necesitas escanear este QR</p>
 </div>
 
@@ -752,8 +838,26 @@ h1.main-title span { color: var(--oro); }
     </div>
   </div>
 
-  <button class="btn-continue" id="btnContinue" onclick="goStep(3)">Continuar a votar →</button>
-  <p class="skip-link" onclick="goStep(3)">Ya soy miembro, saltar este paso</p>
+  <button class="btn-continue" id="btnContinue" onclick="goStep(4)">Continuar a votar →</button>
+  <p class="skip-link" onclick="goStep(4)">Ya soy miembro, saltar este paso</p>
+</div>
+
+<!-- ══ STEP 2B: BIENVENIDO DE VUELTA ══ -->
+<div class="step" id="step2b">
+  <h2>¡Bienvenido<br><span>de vuelta!</span></h2>
+  <p class="subtitle">Vemos que ya votaste. ¿Deseas cambiar tu predicción?</p>
+
+  <div class="welcome-back-card" style="background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.03)); border: 1px solid rgba(201,168,76,0.25); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+    <div style="margin: 12px 0;">
+      <div style="font-size: 0.8rem; color: #7a7060; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Tu voto actual:</div>
+      <div style="font-size: 2rem; font-weight: 700; color: #c9a84c; margin-bottom: 12px;" id="wb-current-vote">—</div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <button class="btn-continue enabled" onclick="goStep(4)">Cambiar mi voto →</button>
+    <button class="btn-continue enabled" style="background: transparent; border: 1px solid rgba(201,168,76,0.25); color: #f5f0e8;" onclick="confirmExistingVote()">Mantener mi voto ✓</button>
+  </div>
 </div>
 
 <!-- ══ STEP 3: VOTA ══ -->
@@ -835,6 +939,10 @@ h1.main-title span { color: var(--oro); }
       <span class="t-label">🎁 Premio</span>
       <span class="t-value gold" id="tkt-prize">Cena para 2</span>
     </div>
+    <div class="ticket-row">
+      <span class="t-label">Tu PIN personal</span>
+      <span class="t-value gold" id="tkt-pin">—</span>
+    </div>
   </div>
 
   <p class="sorteo-info">
@@ -868,8 +976,8 @@ const ADMIN_BOT_PHONE = '14155238886'; // Twilio Sandbox
 let currentStep = 1;
 let joinedWa = false, joinedIg = false;
 let selectedVote = null;
-const steps = [null, 'step1','step2','step3','step4'];
-const progress = [null, 25, 50, 75, 100];
+const steps = [null, 'step1','step2','step2b','step3','step4'];
+const progress = [null, 25, 50, 50, 75, 100];
 
 // ── ADMIN DETECTION ───────────────────────────────────────────────
 function checkAdminAccess() {
@@ -882,9 +990,7 @@ function checkAdminAccess() {
     badge.classList.add('visible');
 
     const adminLink = document.getElementById('adminLink');
-    const msg = 'Hola, soy admin de la Rifa Futbolera';
-    const waLink = `https://wa.me/${ADMIN_BOT_PHONE}?text=${encodeURIComponent(msg)}`;
-    adminLink.href = waLink;
+    adminLink.href = 'admin.html';
   }
 }
 
@@ -915,19 +1021,179 @@ function checkAdminAccess() {
   checkAdminAccess();
 })();
 
+// ── SUPABASE CONFIG ────────────────────────────────────────────
+const SUPABASE_URL = 'https://tigbtwqwfwcqdfwlndkf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2J0d3F3ZndjcWRmd2xuZGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTUwNTIsImV4cCI6MjA5NTk5MTA1Mn0.sT8bwHKzRZ99FaRog7vD8H2LuYdxdM5V-w-vHHWgvOQ';
+
+// ── LOGIN FUNCTIONS ────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('loginModal').classList.add('active');
+  document.getElementById('loginEmail').focus();
+}
+
+function hideLogin() {
+  document.getElementById('loginModal').classList.remove('active');
+}
+
+function generatePin() {
+  return Math.floor(Math.random() * 9000 + 1000).toString();
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const errorEl = document.getElementById('loginError');
+
+  if(!email) {
+    errorEl.textContent = 'Por favor ingresa tu email';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  // Limpiar datos antiguos del localStorage
+  localStorage.removeItem('rf_user_id');
+  localStorage.removeItem('rf_user_email');
+  localStorage.removeItem('rf_user_pin');
+  localStorage.removeItem('rf_previous_vote');
+  localStorage.removeItem('rf_isReturning');
+
+  try {
+    // Buscar usuario en Supabase
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+
+    const users = await res.json();
+    console.log('🔍 Búsqueda de usuario:', email);
+    console.log('📊 Usuarios encontrados:', users.length, users);
+
+    if(users.length === 0) {
+      console.log('✨ NUEVO USUARIO - Creando...');
+      // Nuevo usuario: generar PIN único
+      const newPin = generatePin();
+      const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email,
+          pin: newPin,
+          activo: true,
+          voto_actual: null
+        })
+      });
+
+      console.log('POST Status:', createRes.status, createRes.statusText);
+      if(!createRes.ok) {
+        const errText = await createRes.text();
+        throw new Error(`POST falló: ${createRes.status} - ${errText}`);
+      }
+
+      let newUser = [];
+      try {
+        newUser = await createRes.json();
+        console.log('✅ Usuario creado:', newUser);
+      } catch(e) {
+        console.log('⚠️ No JSON en respuesta, pero OK. Email:', email);
+        newUser = [{ id: email }];
+      }
+
+      localStorage.setItem('rf_user_id', newUser[0]?.id || email);
+      localStorage.setItem('rf_user_email', email);
+      localStorage.setItem('rf_user_pin', newPin);
+      localStorage.removeItem('rf_previous_vote');
+      document.getElementById('loginEmail').value = '';
+      hideLogin();
+      console.log('📍 ANTES DE goStep(2)');
+      console.log('📍 rf_previous_vote:', localStorage.getItem('rf_previous_vote'));
+      goStep(2);
+      console.log('📍 DESPUÉS DE goStep(2)');
+      return;
+    } else {
+      console.log('👤 USUARIO EXISTENTE:', users[0]);
+      // Usuario existente
+      const user = users[0];
+      localStorage.setItem('rf_user_id', user.id);
+      localStorage.setItem('rf_user_email', user.email);
+      localStorage.setItem('rf_user_pin', user.pin);
+      if(user.voto_actual) {
+        localStorage.setItem('rf_previous_vote', user.voto_actual);
+      } else {
+        localStorage.removeItem('rf_previous_vote');
+      }
+      document.getElementById('loginEmail').value = '';
+      hideLogin();
+
+      // Si ya votó: mostrar pantalla de bienvenida
+      if(user.voto_actual) {
+        console.log('👋 Usuario devolviendo, ya tiene voto:', user.voto_actual);
+        const voteLabel = {
+          'home': `Gana ${CONFIG.team1}`,
+          'draw': 'Empate',
+          'away': `Gana ${CONFIG.team2}`
+        }[user.voto_actual] || user.voto_actual;
+
+        document.getElementById('wb-current-vote').textContent = voteLabel;
+        localStorage.setItem('rf_isReturning', 'true');
+        console.log('📍 Ir a step 2b (devolviendo con voto)');
+        goStep('step2b');
+        return;
+      } else {
+        console.log('📍 Ir a step 2 (devolviendo sin voto)');
+        goStep(2);
+        return;
+      }
+    }
+
+    errorEl.style.display = 'none';
+  } catch(err) {
+    console.error('Error de login:', err);
+    errorEl.textContent = 'Error al conectar. Intenta de nuevo.';
+    errorEl.style.display = 'block';
+  }
+}
+
 // ── NAVEGACIÓN ────────────────────────────────────────────────────
 function goStep(n) {
-  document.getElementById(steps[currentStep]).classList.remove('active');
-  currentStep = n;
-  const el = document.getElementById(steps[n]);
-  el.classList.add('active');
-  el.scrollTop = 0;
+  let stepIndex, stepName;
+
+  if(typeof n === 'string') {
+    stepIndex = steps.indexOf(n);
+    stepName = n;
+  } else {
+    stepIndex = n;
+    stepName = steps[n];
+  }
+
+  if(stepIndex < 0 || !stepName) {
+    console.error('Step no encontrado:', n);
+    return;
+  }
+
+  document.getElementById(steps[currentStep])?.classList.remove('active');
+  currentStep = stepIndex;
+  const el = document.getElementById(stepName);
+
+  if(el) {
+    el.classList.add('active');
+    el.scrollTop = 0;
+  } else {
+    console.error('Elemento no encontrado:', stepName);
+    return;
+  }
+
   window.scrollTo(0,0);
-  document.getElementById('progressFill').style.width = progress[n] + '%';
-  document.getElementById('backBtn').classList.toggle('visible', n > 1 && n < 4);
+  if(progress[stepIndex] !== undefined) {
+    document.getElementById('progressFill').style.width = progress[stepIndex] + '%';
+  }
+  document.getElementById('backBtn').classList.toggle('visible', stepIndex > 1 && stepIndex < 5);
 }
 
 function goBack() {
+  hideLogin();
   if(currentStep > 1) goStep(currentStep - 1);
 }
 
@@ -971,33 +1237,138 @@ function checkVoteReady() {
 }
 
 const voteLabels = {
-  home: (t1) => `Gana ${t1}`,
-  draw: ()    => 'Empate',
-  away: (t2)  => `Gana ${t2}`,
+  home: (t1, t2) => `Gana ${t1}`,
+  draw: (t1, t2) => 'Empate',
+  away: (t1, t2) => `Gana ${t2}`,
 };
 
-function submitVote() {
-  const name = document.getElementById('voterName').value.trim();
-  if(!selectedVote || !name) return;
+function confirmExistingVote() {
+  console.log('🚨 confirmExistingVote() EJECUTADA');
+  console.log('🚨 Stack trace:', new Error().stack);
+  const voteText = localStorage.getItem('rf_previous_vote');
+  const vLabel = voteLabels[voteText]?.(CONFIG.team1, CONFIG.team2) || voteText;
 
-  // Guarda localmente (en producción esto iría a tu backend/n8n)
-  const voteData = {
-    name,
-    team1: CONFIG.team1,
-    team2: CONFIG.team2,
-    vote: selectedVote,
-    timestamp: new Date().toISOString(),
-    prize: CONFIG.prize,
-  };
-  localStorage.setItem('rf_last_vote', JSON.stringify(voteData));
+  // Mostrar confirmación
+  document.getElementById('confirmName').textContent = '¡Tu voto se mantuvo!';
+  const msgEl = document.createElement('p');
+  msgEl.textContent = `Tu predicción de ${vLabel} ya está registrada.`;
+  msgEl.style.cssText = 'color: #7a7060; margin: 8px 0;';
 
-  // Actualiza confirmación
-  document.getElementById('confirmName').textContent = `¡Suerte, ${name}! 🤞`;
-  const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
   document.getElementById('tkt-vote').textContent = vLabel;
+  document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
 
   goStep(4);
   launchConfetti();
+  console.log('✅ Voto confirmado sin cambios');
+}
+
+async function submitVote() {
+  const name = document.getElementById('voterName').value.trim();
+  if(!selectedVote || !name) return;
+
+  const userEmail = localStorage.getItem('rf_user_email');
+
+  try {
+    console.log('💾 Procesando voto...');
+
+    // Verificar si el usuario YA tiene un voto
+    console.log('🔍 Buscando voto anterior de:', userEmail);
+    const existingVotes = await fetch(
+      `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+    const votes = await existingVotes.json();
+    const hasVote = Array.isArray(votes) && votes.length > 0;
+    console.log(`${hasVote ? '✏️ Usuario ya votó' : '✨ Primer voto'}`);
+
+    if (hasVote) {
+      // ACTUALIZAR voto existente
+      console.log('🔄 Actualizando voto...');
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            voto: selectedVote,
+            nombre: name
+          })
+        }
+      );
+      if (!updateRes.ok) {
+        const err = await updateRes.text();
+        throw new Error(`No se pudo actualizar: ${updateRes.status} - ${err}`);
+      }
+      console.log('✅ Voto actualizado');
+    } else {
+      // CREAR nuevo voto
+      console.log('➕ Creando primer voto...');
+      const createRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_votos`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            nombre: name,
+            voto: selectedVote
+          })
+        }
+      );
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        throw new Error(`No se pudo guardar: ${createRes.status} - ${err}`);
+      }
+      console.log('✅ Voto creado');
+
+      // Marcar usuario como votado
+      console.log('🔄 Actualizando estado...');
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ votado: true, voto_actual: selectedVote })
+        }
+      );
+    }
+
+    // Guardar en localStorage
+    localStorage.setItem('rf_last_vote', selectedVote);
+    localStorage.setItem('rf_previous_vote', selectedVote);
+
+    // Mostrar confirmación
+    document.getElementById('confirmName').textContent = hasVote
+      ? `¡Voto actualizado, ${name}! ✨`
+      : `¡Suerte, ${name}! 🤞`;
+    const vLabel = voteLabels[selectedVote](CONFIG.team1, CONFIG.team2);
+    document.getElementById('tkt-vote').textContent = vLabel;
+    document.getElementById('tkt-pin').textContent = localStorage.getItem('rf_user_pin');
+
+    goStep(4);
+    launchConfetti();
+    console.log('🎉 Listo');
+  } catch(err) {
+    console.error('❌ Error:', err);
+    alert('❌ Error: ' + err.message);
+  }
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────
