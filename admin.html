@@ -409,6 +409,41 @@ body {
     </div>
   </div>
 
+  <!-- CREAR NUEVA RIFA -->
+  <div class="dash-section">
+    <h2>➕ Crear Nueva Rifa</h2>
+    <div class="resultado-box">
+      <div class="resultado-form">
+        <div class="form-group">
+          <label>Equipo 1</label>
+          <input type="text" id="newTeam1" placeholder="Ej: España" value="España" />
+        </div>
+        <div class="form-group">
+          <label>Emoji/Bandera 1</label>
+          <input type="text" id="newFlag1" placeholder="Ej: 🇪🇸" value="🇪🇸" maxlength="2" />
+        </div>
+        <div class="form-group">
+          <label>Equipo 2</label>
+          <input type="text" id="newTeam2" placeholder="Ej: Argentina" value="Argentina" />
+        </div>
+        <div class="form-group">
+          <label>Emoji/Bandera 2</label>
+          <input type="text" id="newFlag2" placeholder="Ej: 🇦🇷" value="🇦🇷" maxlength="2" />
+        </div>
+        <div class="form-group">
+          <label>Fecha y hora del partido</label>
+          <input type="datetime-local" id="newDate" />
+        </div>
+        <div class="form-group">
+          <label>Premio</label>
+          <input type="text" id="newPrize" placeholder="Ej: $50 en consumo" value="$50 en consumo" />
+        </div>
+        <button type="button" class="btn-result" onclick="saveNewRifa()">🎯 Crear Nueva Rifa (Borra votos anteriores)</button>
+        <div id="newRifaStatus" style="margin-top:12px; padding:12px; border-radius:8px; display:none;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- RESULTADO DEL PARTIDO -->
   <div class="dash-section">
     <h2>Registrar resultado del partido</h2>
@@ -509,6 +544,39 @@ function showDashboard() {
   document.getElementById('dashboard').classList.add('active');
 }
 
+function getConfig() {
+  return {
+    team1: localStorage.getItem('config_team1') || 'España',
+    team2: localStorage.getItem('config_team2') || 'Argentina',
+    flag1: localStorage.getItem('config_flag1') || '🇪🇸',
+    flag2: localStorage.getItem('config_flag2') || '🇦🇷',
+    date: localStorage.getItem('config_date') || '',
+    prize: localStorage.getItem('config_prize') || '$50 en consumo'
+  };
+}
+
+function updateTeamLabels() {
+  const config = getConfig();
+  // Actualizar los cards de stats
+  const homeCard = document.querySelector('.dash-grid .card:nth-child(2) h3');
+  const awayCard = document.querySelector('.dash-grid .card:nth-child(4) h3');
+
+  if(homeCard) homeCard.textContent = `${config.flag1} ${config.team1}`;
+  if(awayCard) awayCard.textContent = `${config.flag2} ${config.team2}`;
+}
+
+function updateMatchResultDropdown() {
+  const config = getConfig();
+  const select = document.getElementById('matchResult');
+
+  select.innerHTML = `
+    <option value="">Selecciona...</option>
+    <option value="home">${config.flag1} Gana ${config.team1}</option>
+    <option value="draw">🤝 Empate</option>
+    <option value="away">${config.flag2} Gana ${config.team2}</option>
+  `;
+}
+
 async function loadVotes() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?order=timestamp.desc`, {
@@ -519,6 +587,7 @@ async function loadVotes() {
     });
 
     voteData = await res.json();
+    const config = getConfig();
 
     // Actualizar stats
     const total = voteData.length;
@@ -534,7 +603,11 @@ async function loadVotes() {
     document.getElementById('awayVotes').textContent = away;
     document.getElementById('awayPercent').textContent = total > 0 ? Math.round(away/total*100) + '%' : '0%';
 
-    // Tabla de votos
+    // Actualizar labels de equipos dinámicamente
+    updateTeamLabels();
+    updateMatchResultDropdown();
+
+    // Tabla de votos (con equipos dinámicos)
     const tbody = document.getElementById('votesBody');
     tbody.innerHTML = voteData.map(v => `
       <tr>
@@ -542,7 +615,7 @@ async function loadVotes() {
         <td style="font-size:0.85rem;">${v.email || '—'}</td>
         <td>
           <span class="vote-badge vote-${v.voto}">
-            ${v.voto === 'home' ? '🇪🇸 España' : v.voto === 'draw' ? '🤝 Empate' : '🇦🇷 Argentina'}
+            ${v.voto === 'home' ? `${config.flag1} ${config.team1}` : v.voto === 'draw' ? '🤝 Empate' : `${config.flag2} ${config.team2}`}
           </span>
         </td>
         <td style="font-size:0.85rem;color:var(--muted);">${new Date(v.timestamp).toLocaleString('es-ES')}</td>
@@ -620,6 +693,108 @@ function selectWinner() {
       btn.textContent = '🎰 Hacer sorteo de nuevo';
     }
   }, 100);
+}
+
+// CREAR NUEVA RIFA
+async function saveNewRifa() {
+  const team1 = document.getElementById('newTeam1').value.trim();
+  const team2 = document.getElementById('newTeam2').value.trim();
+  const flag1 = document.getElementById('newFlag1').value.trim();
+  const flag2 = document.getElementById('newFlag2').value.trim();
+  const dateStr = document.getElementById('newDate').value;
+  const prize = document.getElementById('newPrize').value.trim();
+  const statusEl = document.getElementById('newRifaStatus');
+
+  if (!team1 || !team2 || !flag1 || !flag2 || !dateStr || !prize) {
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(139,26,26,0.2)';
+    statusEl.style.borderLeft = '4px solid #8b1a1a';
+    statusEl.style.color = '#ff6b6b';
+    statusEl.textContent = '❌ Completa todos los campos';
+    return;
+  }
+
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(201,168,76,0.1)';
+  statusEl.style.borderLeft = '4px solid #c9a84c';
+  statusEl.style.color = '#c9a84c';
+  statusEl.textContent = '⏳ Creando nueva rifa... (borrando votos anteriores)';
+
+  try {
+    // 1️⃣ BORRAR TODOS LOS VOTOS DE LA RIFA ANTERIOR
+    console.log('🔄 Borrando votos anteriores...');
+    const deleteRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!deleteRes.ok) {
+      const err = await deleteRes.text();
+      throw new Error(`No se pudieron borrar votos: ${deleteRes.status} - ${err}`);
+    }
+    console.log('✅ Votos borrados');
+
+    // 2️⃣ LIMPIAR voto_actual DE TODOS LOS USUARIOS
+    console.log('🔄 Limpiando estado de usuarios...');
+    const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ voto_actual: null })
+    });
+
+    if (!patchRes.ok) {
+      const err = await patchRes.text();
+      throw new Error(`No se pudo limpiar usuarios: ${patchRes.status} - ${err}`);
+    }
+    console.log('✅ Usuarios limpiados');
+
+    // 3️⃣ GUARDAR NUEVA CONFIGURACION EN LOCALSTORAGE
+    console.log('💾 Guardando nueva configuración...');
+    localStorage.setItem('config_team1', team1);
+    localStorage.setItem('config_team2', team2);
+    localStorage.setItem('config_flag1', flag1);
+    localStorage.setItem('config_flag2', flag2);
+    localStorage.setItem('config_date', dateStr);
+    localStorage.setItem('config_prize', prize);
+    console.log('✅ Configuración guardada');
+
+    // 4️⃣ RECARGAR VOTOS (DEBERÍA ESTAR VACÍO)
+    console.log('🔄 Recargando interfaz...');
+    loadVotes();
+
+    // 5️⃣ MOSTRAR ÉXITO
+    statusEl.style.background = 'rgba(34,197,94,0.1)';
+    statusEl.style.borderLeft = '4px solid #22c55e';
+    statusEl.style.color = '#22c55e';
+    statusEl.textContent = `✅ ¡Nueva rifa creada! ${team1} vs ${team2} · ${prize}`;
+
+    console.log('🎉 Nueva rifa lista');
+
+    // Limpiar formulario
+    setTimeout(() => {
+      document.getElementById('newTeam1').value = 'España';
+      document.getElementById('newTeam2').value = 'Argentina';
+      document.getElementById('newFlag1').value = '🇪🇸';
+      document.getElementById('newFlag2').value = '🇦🇷';
+      document.getElementById('newDate').value = '';
+      document.getElementById('newPrize').value = '$50 en consumo';
+    }, 2000);
+
+  } catch (err) {
+    console.error('❌ Error al crear rifa:', err);
+    statusEl.style.background = 'rgba(139,26,26,0.2)';
+    statusEl.style.borderLeft = '4px solid #8b1a1a';
+    statusEl.style.color = '#ff6b6b';
+    statusEl.textContent = `❌ Error: ${err.message}`;
+  }
 }
 
 // Verificar si está logueado
