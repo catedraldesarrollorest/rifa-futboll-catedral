@@ -1104,7 +1104,7 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_id', newUser[0]?.id || email);
       localStorage.setItem('rf_user_email', email);
       localStorage.setItem('rf_user_pin', newPin);
-      localStorage.setItem('rf_previous_vote', null);
+      localStorage.removeItem('rf_previous_vote');
       document.getElementById('loginEmail').value = '';
       hideLogin();
       console.log('📍 Ir a step 2 (nuevos usuarios)');
@@ -1117,7 +1117,11 @@ async function handleLogin(e) {
       localStorage.setItem('rf_user_id', user.id);
       localStorage.setItem('rf_user_email', user.email);
       localStorage.setItem('rf_user_pin', user.pin);
-      localStorage.setItem('rf_previous_vote', user.voto_actual || null);
+      if(user.voto_actual) {
+        localStorage.setItem('rf_previous_vote', user.voto_actual);
+      } else {
+        localStorage.removeItem('rf_previous_vote');
+      }
       document.getElementById('loginEmail').value = '';
       hideLogin();
 
