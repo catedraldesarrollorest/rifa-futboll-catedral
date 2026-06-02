@@ -371,7 +371,7 @@ body {
     <h1>🔐 Admin</h1>
     <p>Panel de control · Rifa Futbolera</p>
     <form class="login-form" onsubmit="handleAdminLogin(event)">
-      <input type="text" id="adminPin" placeholder="Ej: 5555" maxlength="4" required autofocus />
+      <input type="text" id="adminPin" placeholder="Ej: 5555" maxlength="4" autofocus />
       <button type="submit" class="btn-login">Entrar →</button>
     </form>
     <div class="login-error" id="loginError"></div>
@@ -474,21 +474,27 @@ let voteData = [];
 function handleAdminLogin(e) {
   e.preventDefault();
 
-  try {
-    alert('1. Guardando sesión...');
-    sessionStorage.setItem('adminLogged', 'true');
+  const pin = document.getElementById('adminPin').value.trim();
+  const validPins = ['5555', '5556', '5557'];
+  const loginError = document.getElementById('loginError');
 
-    alert('2. Mostrando dashboard...');
-    showDashboard();
-
-    alert('3. Cargando votos...');
-    loadVotes();
-
-    alert('✅ ¡Listo!');
-  } catch(err) {
-    alert('❌ Error: ' + err.message);
-    console.error(err);
+  if(!pin) {
+    loginError.style.display = 'block';
+    loginError.textContent = 'Ingresa tu PIN de administrador';
+    return;
   }
+
+  if(!validPins.includes(pin)) {
+    loginError.style.display = 'block';
+    loginError.textContent = 'PIN incorrecto';
+    document.getElementById('adminPin').value = '';
+    return;
+  }
+
+  loginError.style.display = 'none';
+  sessionStorage.setItem('adminLogged', 'true');
+  showDashboard();
+  loadVotes();
 }
 
 function logout() {
