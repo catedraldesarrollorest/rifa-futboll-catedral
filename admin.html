@@ -415,27 +415,27 @@ body {
     <div class="resultado-box">
       <div class="resultado-form">
         <div class="form-group">
-          <label>Equipo 1</label>
+          <label for="newTeam1">Equipo 1</label>
           <input type="text" id="newTeam1" placeholder="Ej: España" value="España" />
         </div>
         <div class="form-group">
-          <label>Emoji/Bandera 1</label>
+          <label for="newFlag1">Emoji/Bandera 1</label>
           <input type="text" id="newFlag1" placeholder="Ej: 🇪🇸" value="🇪🇸" maxlength="2" />
         </div>
         <div class="form-group">
-          <label>Equipo 2</label>
+          <label for="newTeam2">Equipo 2</label>
           <input type="text" id="newTeam2" placeholder="Ej: Argentina" value="Argentina" />
         </div>
         <div class="form-group">
-          <label>Emoji/Bandera 2</label>
-          <input type="text" id="newFlag2" placeholder="Ej: 🇦🇷" value="🇦🇷" maxlength="2" />
+          <label for="newFlag2">Emoji/Bandera 2</label>
+          <input type="text" id="newFlag2" placeholder="Ej: 🇪🇸" value="🇦🇷" maxlength="2" />
         </div>
         <div class="form-group">
-          <label>Fecha y hora del partido</label>
+          <label for="newDate">Fecha y hora del partido</label>
           <input type="datetime-local" id="newDate" />
         </div>
         <div class="form-group">
-          <label>Premio</label>
+          <label for="newPrize">Premio</label>
           <input type="text" id="newPrize" placeholder="Ej: $50 en consumo" value="$50 en consumo" />
         </div>
         <button type="button" class="btn-result" onclick="saveNewRifa()">🎯 Crear Nueva Rifa (RESET: Borra todos usuarios y votos)</button>
@@ -450,7 +450,7 @@ body {
     <div class="resultado-box">
       <div class="resultado-form">
         <div class="form-group">
-          <label>Resultado final</label>
+          <label for="matchResult">Resultado final</label>
           <select id="matchResult" onchange="updateWinners()">
             <option value="">Selecciona...</option>
             <option value="home">🇪🇸 Gana España</option>
@@ -459,7 +459,7 @@ body {
           </select>
         </div>
         <div class="form-group">
-          <label>Ganador a sortear</label>
+          <label for="winnerCount">Ganador a sortear</label>
           <input type="text" id="winnerCount" readonly />
         </div>
         <button type="button" class="btn-result" onclick="loadVotes()">Actualizar</button>
