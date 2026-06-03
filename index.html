@@ -755,11 +755,11 @@ h1.main-title span { color: var(--oro); }
 <div class="login-modal" id="loginModal">
   <div class="login-box">
     <h3>Únete a la Rifa</h3>
-    <p>Ingresa tu email para participar</p>
+    <p>Ingresa tu número de teléfono para participar</p>
     <form class="login-form" onsubmit="handleLogin(event)">
       <div style="text-align:left;margin-bottom:12px;">
-        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu email</label>
-        <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required style="width:100%;" autofocus/>
+        <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu teléfono</label>
+        <input type="tel" id="loginPhone" placeholder="+5358867972" required style="width:100%;" autofocus/>
       </div>
       <button type="submit" class="btn-login">Continuar →</button>
     </form>
@@ -1044,17 +1044,8 @@ async function loadRifaConfigFromSupabase() {
         CONFIG.team2 = config.team2 || 'Argentina';
         CONFIG.flag1 = config.flag1 || '🇪🇸';
         CONFIG.flag2 = config.flag2 || '🇦🇷';
+        CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
         CONFIG.prize = config.prize || '$50 en consumo';
-        CONFIG.is_closed = config.is_closed || false;
-
-        // Si la rifa está cerrada, mostrar aviso
-        if (CONFIG.is_closed) {
-          console.log('🔐 Votación cerrada');
-          const votingSection = document.getElementById('step4');
-          if (votingSection) {
-            votingSection.innerHTML = '<div style="padding:40px;text-align:center;"><h2>🔐 Votación Cerrada</h2><p style="color:var(--muted);margin-top:16px;">La votación ha finalizado. Gracias por participar.</p></div>';
-          }
-        }
 
         console.log('✅ Configuración cargada de Supabase:', CONFIG);
 
@@ -1093,7 +1084,7 @@ loadRifaConfigFromSupabase();
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
   document.getElementById('loginModal').classList.add('active');
-  document.getElementById('loginEmail').focus();
+  document.getElementById('loginPhone').focus();
 }
 
 function hideLogin() {
@@ -1104,32 +1095,44 @@ function generatePin() {
   return Math.floor(Math.random() * 9000 + 1000).toString();
 }
 
+function validateCubanPhone(phone) {
+  const cleaned = phone.replace(/\s/g, '');
+  const regex = /^\+53[5-8]\d{7}$/;
+  return regex.test(cleaned);
+}
+
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('loginPhone').value.trim();
   const errorEl = document.getElementById('loginError');
 
-  if(!email) {
-    errorEl.textContent = 'Por favor ingresa tu email';
+  if(!phone) {
+    errorEl.textContent = 'Por favor ingresa tu teléfono';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if(!validateCubanPhone(phone)) {
+    errorEl.textContent = 'Formato inválido. Usa: +5358867972';
     errorEl.style.display = 'block';
     return;
   }
 
   // Limpiar datos antiguos del localStorage
   localStorage.removeItem('rf_user_id');
-  localStorage.removeItem('rf_user_email');
+  localStorage.removeItem('rf_user_phone');
   localStorage.removeItem('rf_user_pin');
   localStorage.removeItem('rf_previous_vote');
   localStorage.removeItem('rf_isReturning');
 
   try {
     // Buscar usuario en Supabase
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?phone=eq.${encodeURIComponent(phone)}`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
 
     const users = await res.json();
-    console.log('🔍 Búsqueda de usuario:', email);
+    console.log('🔍 Búsqueda de usuario:', phone);
     console.log('📊 Usuarios encontrados:', users.length, users);
 
     if(users.length === 0) {
@@ -1144,7 +1147,7 @@ async function handleLogin(e) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          email: email,
+          phone: phone,
           pin: newPin,
           activo: true,
           voto_actual: null
@@ -1162,15 +1165,15 @@ async function handleLogin(e) {
         newUser = await createRes.json();
         console.log('✅ Usuario creado:', newUser);
       } catch(e) {
-        console.log('⚠️ No JSON en respuesta, pero OK. Email:', email);
-        newUser = [{ id: email }];
+        console.log('⚠️ No JSON en respuesta, pero OK. Teléfono:', phone);
+        newUser = [{ id: phone }];
       }
 
-      localStorage.setItem('rf_user_id', newUser[0]?.id || email);
-      localStorage.setItem('rf_user_email', email);
+      localStorage.setItem('rf_user_id', newUser[0]?.id || phone);
+      localStorage.setItem('rf_user_phone', phone);
       localStorage.setItem('rf_user_pin', newPin);
       localStorage.removeItem('rf_previous_vote');
-      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPhone').value = '';
       hideLogin();
       console.log('📍 ANTES DE goStep(2)');
       console.log('📍 rf_previous_vote:', localStorage.getItem('rf_previous_vote'));
@@ -1182,14 +1185,14 @@ async function handleLogin(e) {
       // Usuario existente
       const user = users[0];
       localStorage.setItem('rf_user_id', user.id);
-      localStorage.setItem('rf_user_email', user.email);
+      localStorage.setItem('rf_user_phone', user.phone);
       localStorage.setItem('rf_user_pin', user.pin);
       if(user.voto_actual) {
         localStorage.setItem('rf_previous_vote', user.voto_actual);
       } else {
         localStorage.removeItem('rf_previous_vote');
       }
-      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPhone').value = '';
       hideLogin();
 
       // Si ya votó: mostrar pantalla de bienvenida
@@ -1337,15 +1340,15 @@ async function submitVote() {
     return;
   }
 
-  const userEmail = localStorage.getItem('rf_user_email');
+  const userPhone = localStorage.getItem('rf_user_phone');
 
   try {
     console.log('💾 Procesando voto...');
 
     // Verificar si el usuario YA tiene un voto
-    console.log('🔍 Buscando voto anterior de:', userEmail);
+    console.log('🔍 Buscando voto anterior de:', userPhone);
     const existingVotes = await fetch(
-      `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
+      `${SUPABASE_URL}/rest/v1/rifa_votos?phone=eq.${encodeURIComponent(userPhone)}&select=id`,
       {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -1361,7 +1364,7 @@ async function submitVote() {
       // ACTUALIZAR voto existente
       console.log('🔄 Actualizando voto...');
       const updateRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
+        `${SUPABASE_URL}/rest/v1/rifa_votos?phone=eq.${encodeURIComponent(userPhone)}`,
         {
           method: 'PATCH',
           headers: {
@@ -1393,7 +1396,7 @@ async function submitVote() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            email: userEmail,
+            phone: userPhone,
             nombre: name,
             voto: selectedVote
           })
@@ -1408,7 +1411,7 @@ async function submitVote() {
       // Marcar usuario como votado
       console.log('🔄 Actualizando estado...');
       await fetch(
-        `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
+        `${SUPABASE_URL}/rest/v1/rifa_usuarios?phone=eq.${encodeURIComponent(userPhone)}`,
         {
           method: 'PATCH',
           headers: {
