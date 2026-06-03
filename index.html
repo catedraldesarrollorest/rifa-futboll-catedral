@@ -111,6 +111,29 @@ body::before {
 .logo-ring .ball { font-size: 2.8rem; }
 .logo-ring .ball-img { height: 80px; width: auto; }
 
+.vote-ball {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 3px solid var(--oro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32px auto;
+  box-shadow: 0 0 40px rgba(201,168,76,0.4), inset 0 0 30px rgba(201,168,76,0.1);
+  animation: pulse-ring 3s infinite;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .vote-ball:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 60px rgba(201,168,76,0.6), inset 0 0 40px rgba(201,168,76,0.15);
+  }
+}
+.vote-ball:active { transform: scale(0.95); }
+.vote-ball img { height: 100px; width: auto; }
+
 .tagline-top {
   font-size: 0.7rem;
   letter-spacing: 4px;
@@ -869,11 +892,12 @@ h1.main-title span { color: var(--oro); }
         <span class="check-label" id="label-ig">Seguir en Instagram</span>
       </div>
     </div>
-  </div>
 
-  <button class="btn-vote-main" id="btnContinue" onclick="goStep(3)" style="display:flex;align-items:center;justify-content:center;gap:12px;">
-    ⚽ Ir a votar
-  </button>
+    <!-- Vote Ball Button -->
+    <button class="vote-ball" onclick="goStep(3)" style="border:none;background:transparent;">
+      <img src="logo.png" alt="Ir a votar">
+    </button>
+  </div>
   <p class="skip-link" onclick="goStep(4)">Ya soy miembro, saltar este paso</p>
 </div>
 
