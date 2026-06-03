@@ -237,6 +237,56 @@ body {
   border-color: var(--oro);
 }
 
+/* ── COUNTRY SEARCH ── */
+.country-input {
+  width: 100%;
+  position: relative;
+}
+
+.country-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(10, 10, 8, 0.95);
+  border: 1px solid var(--oro);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.country-suggestions.active {
+  display: block !important;
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+  transition: background-color 150ms var(--ease-out);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.suggestion-item:hover {
+  background-color: rgba(201,168,76,0.15);
+  color: var(--oro);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-flag {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
 .btn-result {
   padding: 12px 20px;
   border: none;
@@ -426,19 +476,25 @@ body {
       <div class="resultado-form">
         <div class="form-group">
           <label>Equipo 1</label>
-          <input type="text" id="newTeam1" placeholder="Ej: España" value="España" />
+          <div style="position:relative;">
+            <input type="text" id="newTeam1" placeholder="Busca un país..." value="España" class="country-input" />
+            <div id="suggestions1" class="country-suggestions" style="display:none;"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>Emoji/Bandera 1</label>
-          <input type="text" id="newFlag1" placeholder="Ej: 🇪🇸" value="🇪🇸" />
+          <input type="text" id="newFlag1" placeholder="Se cargará automáticamente" value="🇪🇸" readonly style="opacity:0.7;" />
         </div>
         <div class="form-group">
           <label>Equipo 2</label>
-          <input type="text" id="newTeam2" placeholder="Ej: Argentina" value="Argentina" />
+          <div style="position:relative;">
+            <input type="text" id="newTeam2" placeholder="Busca un país..." value="Argentina" class="country-input" />
+            <div id="suggestions2" class="country-suggestions" style="display:none;"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>Emoji/Bandera 2</label>
-          <input type="text" id="newFlag2" placeholder="Ej: 🇦🇷" value="🇦🇷" />
+          <input type="text" id="newFlag2" placeholder="Se cargará automáticamente" value="🇦🇷" readonly style="opacity:0.7;" />
         </div>
         <div class="form-group">
           <label>Premio</label>
@@ -511,6 +567,82 @@ const SUPABASE_URL = 'https://tigbtwqwfwcqdfwlndkf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2J0d3F3ZndjcWRmd2xuZGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTUwNTIsImV4cCI6MjA5NTk5MTA1Mn0.sT8bwHKzRZ99FaRog7vD8H2LuYdxdM5V-w-vHHWgvOQ';
 
 let voteData = [];
+
+// Base de datos de países con sus banderas
+const countries = [
+  { name: 'Alemania', flag: '🇩🇪' },
+  { name: 'Arabia Saudita', flag: '🇸🇦' },
+  { name: 'Argelia', flag: '🇩🇿' },
+  { name: 'Argentina', flag: '🇦🇷' },
+  { name: 'Australia', flag: '🇦🇺' },
+  { name: 'Austria', flag: '🇦🇹' },
+  { name: 'Bélgica', flag: '🇧🇪' },
+  { name: 'Bosnia y Herzegovina', flag: '🇧🇦' },
+  { name: 'Brasil', flag: '🇧🇷' },
+  { name: 'Cabo Verde', flag: '🇨🇻' },
+  { name: 'Canadá', flag: '🇨🇦' },
+  { name: 'Catar', flag: '🇶🇦' },
+  { name: 'Colombia', flag: '🇨🇴' },
+  { name: 'Corea del Sur', flag: '🇰🇷' },
+  { name: 'Costa de Marfil', flag: '🇨🇮' },
+  { name: 'Croacia', flag: '🇭🇷' },
+  { name: 'Curazao', flag: '🇨🇼' },
+  { name: 'Ecuador', flag: '🇪🇨' },
+  { name: 'Egipto', flag: '🇪🇬' },
+  { name: 'Inglaterra', flag: '🇬🇧' },
+  { name: 'Escocia', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { name: 'España', flag: '🇪🇸' },
+  { name: 'Estados Unidos', flag: '🇺🇸' },
+  { name: 'Francia', flag: '🇫🇷' },
+  { name: 'Ghana', flag: '🇬🇭' },
+  { name: 'Haití', flag: '🇭🇹' },
+  { name: 'Irak', flag: '🇮🇶' },
+  { name: 'Irán', flag: '🇮🇷' },
+  { name: 'Japón', flag: '🇯🇵' },
+  { name: 'Jordania', flag: '🇯🇴' },
+  { name: 'Marruecos', flag: '🇲🇦' },
+  { name: 'México', flag: '🇲🇽' },
+  { name: 'Noruega', flag: '🇳🇴' },
+  { name: 'Países Bajos', flag: '🇳🇱' },
+  { name: 'Panamá', flag: '🇵🇦' },
+  { name: 'Paraguay', flag: '🇵🇾' },
+  { name: 'Portugal', flag: '🇵🇹' },
+  { name: 'RD del Congo', flag: '🇨🇩' },
+  { name: 'República Checa', flag: '🇨🇿' },
+  { name: 'Senegal', flag: '🇸🇳' },
+  { name: 'Sudáfrica', flag: '🇿🇦' },
+  { name: 'Suecia', flag: '🇸🇪' },
+  { name: 'Suiza', flag: '🇨🇭' },
+  { name: 'Túnez', flag: '🇹🇳' },
+  { name: 'Turquía', flag: '🇹🇷' },
+  { name: 'Uzbekistán', flag: '🇺🇿' },
+  { name: 'Uruguay', flag: '🇺🇾' }
+];
+        <span>${country.name}</span>
+      </div>
+    `).join('');
+
+    suggestionsDiv.style.display = 'block';
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      suggestionsDiv.style.display = 'none';
+    }, 200);
+  });
+}
+
+function selectCountry(inputId, flagId, name, flag) {
+  document.getElementById(inputId).value = name;
+  document.getElementById(flagId).value = flag;
+  document.getElementById(inputId).focus();
+}
+
+// Inicializar búsqueda de países cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+  setupCountrySearch('newTeam1', 'newFlag1', 'suggestions1');
+  setupCountrySearch('newTeam2', 'newFlag2', 'suggestions2');
+});
 
 function handleAdminLogin(e) {
   e.preventDefault();
