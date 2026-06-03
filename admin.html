@@ -388,11 +388,6 @@ body {
   <!-- STATS -->
   <div class="dash-grid">
     <div class="card">
-      <h3>⏱️ Tiempo para cierre</h3>
-      <div class="number" id="countdownTimer">--:--</div>
-      <div class="sub" id="countdownStatus">cargando...</div>
-    </div>
-    <div class="card">
       <h3>Total de votos</h3>
       <div class="number" id="totalVotes">0</div>
       <div class="sub">participantes</div>
@@ -414,33 +409,42 @@ body {
     </div>
   </div>
 
+  <!-- COUNTDOWN TIMER -->
+  <div class="dash-section">
+    <h2>⏱️ Tiempo para Cierre</h2>
+    <div class="card" style="text-align: center; padding: 24px;">
+      <div class="number" id="countdownTimer" style="font-size: 3rem; font-weight: 700;">--:--</div>
+      <div class="sub" id="countdownStatus">Cargando horario...</div>
+    </div>
+  </div>
+
   <!-- CREAR NUEVA RIFA -->
   <div class="dash-section">
     <h2>➕ Crear Nueva Rifa</h2>
     <div class="resultado-box">
       <div class="resultado-form">
         <div class="form-group">
-          <label for="newTeam1">Equipo 1</label>
+          <label>Equipo 1</label>
           <input type="text" id="newTeam1" placeholder="Ej: España" value="España" />
         </div>
         <div class="form-group">
-          <label for="newFlag1">Emoji/Bandera 1</label>
-          <input type="text" id="newFlag1" placeholder="Ej: 🇪🇸" value="🇪🇸" maxlength="2" />
+          <label>Emoji/Bandera 1</label>
+          <input type="text" id="newFlag1" placeholder="Ej: 🇪🇸" value="🇪🇸" />
         </div>
         <div class="form-group">
-          <label for="newTeam2">Equipo 2</label>
+          <label>Equipo 2</label>
           <input type="text" id="newTeam2" placeholder="Ej: Argentina" value="Argentina" />
         </div>
         <div class="form-group">
-          <label for="newFlag2">Emoji/Bandera 2</label>
-          <input type="text" id="newFlag2" placeholder="Ej: 🇪🇸" value="🇦🇷" maxlength="2" />
+          <label>Emoji/Bandera 2</label>
+          <input type="text" id="newFlag2" placeholder="Ej: 🇦🇷" value="🇦🇷" />
         </div>
         <div class="form-group">
-          <label for="newDate">Fecha y hora del partido</label>
+          <label>Fecha y hora del partido</label>
           <input type="datetime-local" id="newDate" />
         </div>
         <div class="form-group">
-          <label for="newPrize">Premio</label>
+          <label>Premio</label>
           <input type="text" id="newPrize" placeholder="Ej: $50 en consumo" value="$50 en consumo" />
         </div>
         <button type="button" class="btn-result" onclick="saveNewRifa()">🎯 Crear Nueva Rifa (RESET: Borra todos usuarios y votos)</button>
@@ -455,7 +459,7 @@ body {
     <div class="resultado-box">
       <div class="resultado-form">
         <div class="form-group">
-          <label for="matchResult">Resultado final</label>
+          <label>Resultado final</label>
           <select id="matchResult" onchange="updateWinners()">
             <option value="">Selecciona...</option>
             <option value="home">🇪🇸 Gana España</option>
@@ -464,7 +468,7 @@ body {
           </select>
         </div>
         <div class="form-group">
-          <label for="winnerCount">Ganador a sortear</label>
+          <label>Ganador a sortear</label>
           <input type="text" id="winnerCount" readonly />
         </div>
         <button type="button" class="btn-result" onclick="loadVotes()">Actualizar</button>
@@ -511,7 +515,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let voteData = [];
 
-async function handleAdminLogin(e) {
+function handleAdminLogin(e) {
   e.preventDefault();
 
   const pin = document.getElementById('adminPin').value.trim();
@@ -534,17 +538,8 @@ async function handleAdminLogin(e) {
   loginError.style.display = 'none';
   sessionStorage.setItem('adminLogged', 'true');
   showDashboard();
-
-  try {
-    await loadVotes();
-  } catch (err) {
-    console.error('❌ Error cargando votos:', err.message);
-    const dashboard = document.getElementById('dashboard');
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'padding: 20px; background: #fee; border: 1px solid #f00; color: #333; margin: 20px; border-radius: 8px; font-family: monospace; font-size: 13px;';
-    errorDiv.innerHTML = `<strong>❌ Error cargando datos:</strong><br>${err.message}<br><br>Revisa la consola del navegador para más detalles.`;
-    dashboard.prepend(errorDiv);
-  }
+  loadVotes();
+  updateCountdown();
 }
 
 function logout() {
@@ -562,52 +557,44 @@ function showDashboard() {
 async function getConfig() {
   try {
     // Intentar leer de Supabase primero
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: getConfig no responde en 15 segundos');
-      controller.abort();
-    }, 15000);
-
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
-        'apikey': SUPABASE_KEY
-      },
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeoutId));
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const config = data[0];
+        return {
+          team1: config.team1 || 'España',
+          team2: config.team2 || 'Argentina',
+          flag1: config.flag1 || '🇪🇸',
+          flag2: config.flag2 || '🇦🇷',
+          date: config.match_date || '',
+          prize: config.prize || '$50 en consumo'
+        };
+      }
     }
-
-    const data = await res.json();
-    console.log('📊 Respuesta de Supabase rifa_config:', data);
-
-    if (!data || !Array.isArray(data)) {
-      throw new Error(`Respuesta inválida de Supabase: esperaba array, recibí ${typeof data}`);
-    }
-
-    if (data.length === 0) {
-      throw new Error('❌ La tabla rifa_config está vacía - Por favor, crea una configuración en Supabase');
-    }
-
-    const config = data[0];
-    console.log('✅ Config cargada de Supabase:', config);
-    return {
-      team1: config.team1 || 'España',
-      team2: config.team2 || 'Argentina',
-      flag1: config.flag1 || '🇪🇸',
-      flag2: config.flag2 || '🇦🇷',
-      date: config.match_date || '',
-      prize: config.prize || '$50 en consumo'
-    };
   } catch (err) {
-    console.error('❌ Error cargando config de Supabase:', err.message);
-    console.error('Stack:', err);
-    throw err;
+    console.log('⚠️ No se pudo leer config de Supabase, usando localStorage:', err);
   }
+
+  // Respaldo: usar localStorage
+  return {
+    team1: localStorage.getItem('config_team1') || 'España',
+    team2: localStorage.getItem('config_team2') || 'Argentina',
+    flag1: localStorage.getItem('config_flag1') || '🇪🇸',
+    flag2: localStorage.getItem('config_flag2') || '🇦🇷',
+    date: localStorage.getItem('config_date') || '',
+    prize: localStorage.getItem('config_prize') || '$50 en consumo'
+  };
 }
 
-function updateTeamLabels(config) {
+function updateTeamLabels() {
+  const config = getConfig();
   // Actualizar los cards de stats
   const homeCard = document.querySelector('.dash-grid .card:nth-child(2) h3');
   const awayCard = document.querySelector('.dash-grid .card:nth-child(4) h3');
@@ -616,7 +603,8 @@ function updateTeamLabels(config) {
   if(awayCard) awayCard.textContent = `${config.flag2} ${config.team2}`;
 }
 
-function updateMatchResultDropdown(config) {
+function updateMatchResultDropdown() {
+  const config = getConfig();
   const select = document.getElementById('matchResult');
 
   select.innerHTML = `
@@ -629,26 +617,14 @@ function updateMatchResultDropdown(config) {
 
 async function loadVotes() {
   try {
-    console.log('📡 Cargando votos de Supabase...');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: loadVotes no responde en 15 segundos');
-      controller.abort();
-    }, 15000);
-
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?order=timestamp.desc`, {
       headers: {
-        'apikey': SUPABASE_KEY
-      },
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeoutId));
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
 
     voteData = await res.json();
-    console.log('✅ Votos cargados:', voteData.length);
     const config = await getConfig();
 
     // Actualizar stats
@@ -666,8 +642,8 @@ async function loadVotes() {
     document.getElementById('awayPercent').textContent = total > 0 ? Math.round(away/total*100) + '%' : '0%';
 
     // Actualizar labels de equipos dinámicamente
-    updateTeamLabels(config);
-    updateMatchResultDropdown(config);
+    updateTeamLabels();
+    updateMatchResultDropdown();
 
     // Tabla de votos (con equipos dinámicos)
     const tbody = document.getElementById('votesBody');
@@ -689,67 +665,6 @@ async function loadVotes() {
     console.error('Error cargando votos:', err);
   }
 }
-
-function updateCountdown() {
-  const matchDateEl = document.getElementById('countdownTimer');
-  const statusEl = document.getElementById('countdownStatus');
-
-  try {
-    // Obtener match_date de Supabase (o usar del CONFIG)
-    const now = new Date();
-
-    // Función auxiliar para calcular tiempo hasta el partido
-    async function getMatchDate() {
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=match_date`, {
-          headers: { 'apikey': SUPABASE_KEY }
-        });
-        const data = await res.json();
-        if (data && data.length > 0 && data[0].match_date) {
-          return new Date(data[0].match_date);
-        }
-      } catch(e) {
-        console.log('No se pudo obtener match_date');
-      }
-      return null;
-    }
-
-    getMatchDate().then(matchDate => {
-      if (!matchDate) {
-        matchDateEl.textContent = 'N/A';
-        statusEl.textContent = 'sin fecha';
-        return;
-      }
-
-      const updateTimer = () => {
-        const now = new Date();
-        const diff = matchDate - now;
-
-        if (diff <= 0) {
-          matchDateEl.textContent = '✓';
-          statusEl.textContent = 'partido en vivo';
-          return;
-        }
-
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        matchDateEl.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        statusEl.textContent = `${seconds}s`;
-      };
-
-      updateTimer();
-      setInterval(updateTimer, 1000);
-    });
-  } catch (err) {
-    console.error('Error en countdown:', err);
-    matchDateEl.textContent = 'Error';
-  }
-}
-
-// Actualizar contador cuando se carga la página
-updateCountdown();
 
 function updateWinners() {
   const result = document.getElementById('matchResult').value;
@@ -846,71 +761,47 @@ async function saveNewRifa() {
   try {
     // 1️⃣ BORRAR TODOS LOS VOTOS DE LA RIFA ANTERIOR
     console.log('🔄 Borrando votos anteriores...');
-    const controller1 = new AbortController();
-    const timeout1 = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: No se pudieron borrar votos en 15 segundos');
-      controller1.abort();
-    }, 15000);
-
-    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?id=gt.0`, {
+    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
-      },
-      signal: controller1.signal
-    }).finally(() => clearTimeout(timeout1));
-
-    console.log('DELETE votos response:', deleteVotesRes.status, deleteVotesRes.statusText);
-    const votesText = await deleteVotesRes.text();
-    console.log('DELETE votos response body:', votesText);
+      }
+    });
 
     if (!deleteVotesRes.ok) {
-      throw new Error(`No se pudieron borrar votos: ${deleteVotesRes.status} - ${votesText}`);
+      const err = await deleteVotesRes.text();
+      throw new Error(`No se pudieron borrar votos: ${deleteVotesRes.status} - ${err}`);
     }
     console.log('✅ Votos borrados');
 
     // 2️⃣ BORRAR TODOS LOS USUARIOS - RESET COMPLETO
     console.log('🔄 Borrando todos los usuarios (reset total)...');
-    const controller2 = new AbortController();
-    const timeout2 = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: No se pudieron borrar usuarios en 15 segundos');
-      controller2.abort();
-    }, 15000);
-
-    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=gt.0`, {
+    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
-      },
-      signal: controller2.signal
-    }).finally(() => clearTimeout(timeout2));
-
-    console.log('DELETE usuarios response:', deleteUsersRes.status, deleteUsersRes.statusText);
-    const usersText = await deleteUsersRes.text();
-    console.log('DELETE usuarios response body:', usersText);
+      }
+    });
 
     if (!deleteUsersRes.ok) {
-      throw new Error(`No se pudieron borrar usuarios: ${deleteUsersRes.status} - ${usersText}`);
+      const err = await deleteUsersRes.text();
+      throw new Error(`No se pudieron borrar usuarios: ${deleteUsersRes.status} - ${err}`);
     }
     console.log('✅ Todos los usuarios borrados - RESET COMPLETO');
 
     // 3️⃣ GUARDAR NUEVA CONFIGURACION EN SUPABASE
     console.log('💾 Guardando nueva configuración en Supabase...');
-    const controller3 = new AbortController();
-    const timeout3 = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: No se pudo guardar configuración en 15 segundos');
-      controller3.abort();
-    }, 15000);
-
     const updateConfigRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1`, {
       method: 'PATCH',
       headers: {
         'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
       },
-      signal: controller3.signal,
       body: JSON.stringify({
         team1: team1,
         team2: team2,
@@ -920,7 +811,7 @@ async function saveNewRifa() {
         prize: prize,
         updated_at: new Date().toISOString()
       })
-    }).finally(() => clearTimeout(timeout3));
+    });
 
     if (!updateConfigRes.ok) {
       const err = await updateConfigRes.text();
@@ -936,9 +827,6 @@ async function saveNewRifa() {
     localStorage.setItem('config_date', dateStr);
     localStorage.setItem('config_prize', prize);
 
-    // Notificar a todas las pestañas que se actualizó la rifa
-    localStorage.setItem('rifa_updated_at', new Date().toISOString());
-
     // 4️⃣ RECARGAR VOTOS (DEBERÍA ESTAR VACÍO)
     console.log('🔄 Recargando interfaz...');
     loadVotes();
@@ -950,6 +838,12 @@ async function saveNewRifa() {
     statusEl.textContent = `✅ ¡Nueva rifa creada! ${team1} vs ${team2} · ${prize} | Usuarios y votos BORRADOS `;
 
     console.log('🎉 Nueva rifa lista - RESET COMPLETO');
+
+    // Actualizar countdown timer
+    updateCountdown();
+
+    // Guardar timestamp de actualización en localStorage para notificar a votantes
+    localStorage.setItem('rifa_updated_at', new Date().getTime());
 
     // Limpiar formulario
     setTimeout(() => {
@@ -970,13 +864,73 @@ async function saveNewRifa() {
   }
 }
 
+// ACTUALIZAR COUNTDOWN TIMER
+let countdownInterval;
+async function updateCountdown() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=match_date`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (!res.ok) {
+      document.getElementById('countdownStatus').textContent = '⚠️ Error cargando horario';
+      return;
+    }
+
+    const data = await res.json();
+    const matchDate = data && data.length > 0 ? data[0].match_date : null;
+
+    if (!matchDate) {
+      document.getElementById('countdownTimer').textContent = '--:--';
+      document.getElementById('countdownStatus').textContent = 'Sin horario configurado';
+      return;
+    }
+
+    // Función para actualizar la pantalla cada segundo
+    function updateDisplay() {
+      const now = new Date();
+      const match = new Date(matchDate);
+      const diff = match - now;
+
+      if (diff < 0) {
+        document.getElementById('countdownTimer').textContent = '✓';
+        document.getElementById('countdownStatus').textContent = 'Partido en vivo o finalizado';
+        return;
+      }
+
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      document.getElementById('countdownTimer').textContent =
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+      const matchDateStr = match.toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+      document.getElementById('countdownStatus').textContent = `⏰ Inicio: ${matchDateStr}`;
+    }
+
+    // Actualizar inmediatamente
+    updateDisplay();
+
+    // Limpiar interval anterior si existe
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    // Actualizar cada segundo
+    countdownInterval = setInterval(updateDisplay, 1000);
+  } catch (err) {
+    console.error('❌ Error actualizando countdown:', err);
+    document.getElementById('countdownStatus').textContent = '⚠️ Error en el countdown';
+  }
+}
+
 // Verificar si está logueado
 if(!sessionStorage.getItem('adminLogged')) {
   document.getElementById('loginScreen').style.display = 'flex';
 } else {
   showDashboard();
-  loadVotes().catch(err => console.error('Error cargando votos:', err));
+  loadVotes();
 }
-</script>
-
 <!-- Vercel redeploy trigger -->

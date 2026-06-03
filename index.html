@@ -913,11 +913,6 @@ h1.main-title span { color: var(--oro); }
 
     <button class="btn-vote" id="btnVote" onclick="submitVote()">🎯 Enviar mi voto</button>
 
-    <div id="votingStatus" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-top:16px;text-align:center;color:#fca5a5;">
-      <p style="margin:0;font-weight:700;">⏱️ Votación cerrada</p>
-      <p style="margin:8px 0 0 0;font-size:0.9rem;">El partido ha comenzado. No se pueden registrar nuevos votos para esta rifa.</p>
-    </div>
-
     <div class="vote-rules">
       <strong>Reglas:</strong> Un voto por persona · Las votaciones cierran al inicio del partido · Entre los acertantes se hace un sorteo aleatorio en directo · El premio se recoge en el restaurante.
     </div>
@@ -966,62 +961,16 @@ const SUPABASE_URL = 'https://tigbtwqwfwcqdfwlndkf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2J0d3F3ZndjcWRmd2xuZGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTUwNTIsImV4cCI6MjA5NTk5MTA1Mn0.sT8bwHKzRZ99FaRog7vD8H2LuYdxdM5V-w-vHHWgvOQ';
 
 // ── CONFIGURACIÓN ─────────────────────────────────────────────────
-// CONFIG: Lee del localStorage si existe (actualizado por admin), sino usa valores por defecto
-let CONFIG = {
-  team1:  localStorage.getItem('config_team1') || "España",
-  team2:  localStorage.getItem('config_team2') || "Argentina",
-  flag1:  localStorage.getItem('config_flag1') || "🇪🇸",
-  flag2:  localStorage.getItem('config_flag2') || "🇦🇷",
-  date:   localStorage.getItem('config_date') || "14 Jun · 21:00h",
-  prize:  localStorage.getItem('config_prize') || "Cena para 2 personas",
+// Edita estos datos antes de imprimir el QR
+const CONFIG = {
+  team1:  "España",
+  team2:  "Argentina",
+  flag1:  "🇪🇸",
+  flag2:  "🇦🇷",
+  date:   "14 Jun · 21:00h",
+  prize:  "Cena para 2 personas",
   group:  "H",
 };
-
-// Función para actualizar CONFIG desde localStorage
-function updateConfigFromStorage() {
-  CONFIG.team1 = localStorage.getItem('config_team1') || "España";
-  CONFIG.team2 = localStorage.getItem('config_team2') || "Argentina";
-  CONFIG.flag1 = localStorage.getItem('config_flag1') || "🇪🇸";
-  CONFIG.flag2 = localStorage.getItem('config_flag2') || "🇦🇷";
-  CONFIG.date = localStorage.getItem('config_date') || "14 Jun · 21:00h";
-  CONFIG.prize = localStorage.getItem('config_prize') || "Cena para 2 personas";
-
-  // Actualizar elementos HTML con nuevos valores
-  updatePageConfig();
-}
-
-// Actualizar todos los elementos de la página con CONFIG actual
-function updatePageConfig() {
-  // Step 1
-  const s1prize = document.getElementById('s1prize');
-  const s1flag1 = document.getElementById('s1flag1');
-  const s1flag2 = document.getElementById('s1flag2');
-  if(s1prize) s1prize.textContent = CONFIG.prize;
-  if(s1flag1) s1flag1.textContent = CONFIG.flag1;
-  if(s1flag2) s1flag2.textContent = CONFIG.flag2;
-
-  // Step 3
-  const flag1 = document.getElementById('flag1');
-  const tname1 = document.getElementById('tname1');
-  const flag2 = document.getElementById('flag2');
-  const tname2 = document.getElementById('tname2');
-  if(flag1) flag1.textContent = CONFIG.flag1;
-  if(tname1) tname1.textContent = CONFIG.team1;
-  if(flag2) flag2.textContent = CONFIG.flag2;
-  if(tname2) tname2.textContent = CONFIG.team2;
-
-  // Vote buttons
-  const vbFlag1 = document.getElementById('vb-flag1');
-  const vbFlag2 = document.getElementById('vb-flag2');
-  if(vbFlag1) vbFlag1.textContent = CONFIG.flag1;
-  if(vbFlag2) vbFlag2.textContent = CONFIG.flag2;
-
-  // Ticket
-  const tktPrize = document.getElementById('tkt-prize');
-  if(tktPrize) tktPrize.textContent = CONFIG.prize;
-
-  console.log('✅ Página actualizada con nueva configuración:', CONFIG);
-}
 
 // ── ADMIN CONFIG ────────────────────────────────────────────────────
 const ADMIN_PHONES = ['+5358416293', '+5355162840', '+5358867972']; // Amalia, Abelito, Frank
@@ -1080,90 +1029,57 @@ function checkAdminAccess() {
 async function loadRifaConfigFromSupabase() {
   try {
     console.log('📡 Cargando configuración de rifa desde Supabase...');
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: Supabase no responde en 15 segundos');
-      controller.abort();
-    }, 15000);
-
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
-        'apikey': SUPABASE_KEY
-      },
-      signal: controller.signal
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
     });
 
-    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const config = data[0];
+        CONFIG.team1 = config.team1 || 'España';
+        CONFIG.team2 = config.team2 || 'Argentina';
+        CONFIG.flag1 = config.flag1 || '🇪🇸';
+        CONFIG.flag2 = config.flag2 || '🇦🇷';
+        CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
+        CONFIG.prize = config.prize || '$50 en consumo';
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        console.log('✅ Configuración cargada de Supabase:', CONFIG);
+
+        // Actualizar UI con la nueva configuración
+        document.getElementById('s1team1').textContent = CONFIG.team1;
+        document.getElementById('s1team2').textContent = CONFIG.team2;
+        document.getElementById('s1flag1').textContent = CONFIG.flag1;
+        document.getElementById('s1flag2').textContent = CONFIG.flag2;
+        document.getElementById('s1prize').textContent = CONFIG.prize;
+
+        document.getElementById('tname1').textContent = CONFIG.team1;
+        document.getElementById('tname2').textContent = CONFIG.team2;
+        document.getElementById('flag1').textContent  = CONFIG.flag1;
+        document.getElementById('flag2').textContent  = CONFIG.flag2;
+
+        document.getElementById('vb-t1').textContent   = CONFIG.team1;
+        document.getElementById('vb-t2').textContent   = CONFIG.team2;
+        document.getElementById('vb-flag1').textContent = CONFIG.flag1;
+        document.getElementById('vb-flag2').textContent = CONFIG.flag2;
+
+        document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
+        document.getElementById('tkt-prize').textContent = CONFIG.prize;
+
+        return true;
+      }
     }
-
-    const data = await res.json();
-    console.log('📊 Respuesta de Supabase rifa_config:', data);
-
-    if (!data || !Array.isArray(data)) {
-      throw new Error(`Respuesta inválida de Supabase: esperaba array, recibí ${typeof data}`);
-    }
-
-    if (data.length === 0) {
-      throw new Error('La tabla rifa_config está vacía - no hay configuración para mostrar');
-    }
-
-    const config = data[0];
-    CONFIG.team1 = config.team1 || 'España';
-    CONFIG.team2 = config.team2 || 'Argentina';
-    CONFIG.flag1 = config.flag1 || '🇪🇸';
-    CONFIG.flag2 = config.flag2 || '🇦🇷';
-    CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
-    CONFIG.prize = config.prize || '$50 en consumo';
-
-    console.log('✅ Configuración cargada de Supabase:', CONFIG);
-
-    // Actualizar UI con la nueva configuración
-    document.getElementById('s1team1').textContent = CONFIG.team1;
-    document.getElementById('s1team2').textContent = CONFIG.team2;
-    document.getElementById('s1flag1').textContent = CONFIG.flag1;
-    document.getElementById('s1flag2').textContent = CONFIG.flag2;
-    document.getElementById('s1prize').textContent = CONFIG.prize;
-
-    document.getElementById('tname1').textContent = CONFIG.team1;
-    document.getElementById('tname2').textContent = CONFIG.team2;
-    document.getElementById('flag1').textContent  = CONFIG.flag1;
-    document.getElementById('flag2').textContent  = CONFIG.flag2;
-
-    document.getElementById('vb-t1').textContent   = CONFIG.team1;
-    document.getElementById('vb-t2').textContent   = CONFIG.team2;
-    document.getElementById('vb-flag1').textContent = CONFIG.flag1;
-    document.getElementById('vb-flag2').textContent = CONFIG.flag2;
-
-    document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
-    document.getElementById('tkt-prize').textContent = CONFIG.prize;
-
-    return true;
   } catch (err) {
-    console.error('❌ Error cargando config de Supabase:', err.message);
-    console.error('Stack:', err);
-    throw err;
+    console.log('⚠️ No se pudo cargar config de Supabase, usando valores por defecto:', err);
   }
   return false;
 }
 
 // Cargar configuración cuando la página inicia
 loadRifaConfigFromSupabase();
-
-// Escuchar cambios en otras pestañas (cuando admin crea nueva rifa)
-window.addEventListener('storage', (e) => {
-  if (e.key === 'rifa_updated_at') {
-    console.log('🔄 Detección: Nueva rifa creada en otra pestaña. Recargando configuración...');
-    // Actualizar CONFIG desde Supabase
-    updateConfigFromStorage();
-    // También intentar recargar desde Supabase
-    loadRifaConfigFromSupabase().catch(err => {
-      console.log('⚠️ No se pudo recargar desde Supabase, usando localStorage');
-    });
-  }
-});
 
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
@@ -1198,17 +1114,10 @@ async function handleLogin(e) {
   localStorage.removeItem('rf_isReturning');
 
   try {
-    // Intentar buscar usuario en Supabase con timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: Búsqueda de usuario no responde en 15 segundos');
-      controller.abort();
-    }, 15000);
-
+    // Buscar usuario en Supabase
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
-      headers: { 'apikey': SUPABASE_KEY },
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeoutId));
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
 
     const users = await res.json();
     console.log('🔍 Búsqueda de usuario:', email);
@@ -1218,16 +1127,11 @@ async function handleLogin(e) {
       console.log('✨ NUEVO USUARIO - Creando...');
       // Nuevo usuario: generar PIN único
       const newPin = generatePin();
-      const controller2 = new AbortController();
-      const timeoutId2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: Crear usuario no responde en 15 segundos');
-        controller2.abort();
-      }, 15000);
-
       const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -1235,9 +1139,8 @@ async function handleLogin(e) {
           pin: newPin,
           activo: true,
           voto_actual: null
-        }),
-        signal: controller2.signal
-      }).finally(() => clearTimeout(timeoutId2));
+        })
+      });
 
       console.log('POST Status:', createRes.status, createRes.statusText);
       if(!createRes.ok) {
@@ -1303,20 +1206,9 @@ async function handleLogin(e) {
 
     errorEl.style.display = 'none';
   } catch(err) {
-    console.error('❌ Error de login (intentando fallback):', err);
-
-    // FALLBACK: Usar localStorage si Supabase falla
-    console.log('📱 Usando modo offline con localStorage...');
-    const newPin = generatePin();
-    localStorage.setItem('rf_user_id', email);
-    localStorage.setItem('rf_user_email', email);
-    localStorage.setItem('rf_user_pin', newPin);
-    localStorage.removeItem('rf_previous_vote');
-    document.getElementById('loginEmail').value = '';
-    hideLogin();
-
-    console.log('✅ Usuario creado en localStorage. Entrando a step 2...');
-    goStep(2);
+    console.error('Error de login:', err);
+    errorEl.textContent = 'Error al conectar. Intenta de nuevo.';
+    errorEl.style.display = 'block';
   }
 }
 
@@ -1427,12 +1319,6 @@ function confirmExistingVote() {
 }
 
 async function submitVote() {
-  // Validar que votación esté abierta
-  if(!isVotingOpen()) {
-    alert('⏱️ Lo sentimos, el tiempo de votación para este partido ha terminado.\n\nEl partido ha comenzado y no se pueden registrar nuevos votos.');
-    return;
-  }
-
   const name = document.getElementById('voterName').value.trim();
   if(!selectedVote || !name) return;
 
@@ -1443,22 +1329,15 @@ async function submitVote() {
 
     // Verificar si el usuario YA tiene un voto
     console.log('🔍 Buscando voto anterior de:', userEmail);
-    const controller1 = new AbortController();
-    const timeout1 = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: No se pudo verificar votos anteriores en 15 segundos');
-      controller1.abort();
-    }, 15000);
-
     const existingVotes = await fetch(
       `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
       {
         headers: {
-          'apikey': SUPABASE_KEY
-        },
-        signal: controller1.signal
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
       }
-    ).finally(() => clearTimeout(timeout1));
-
+    );
     const votes = await existingVotes.json();
     const hasVote = Array.isArray(votes) && votes.length > 0;
     console.log(`${hasVote ? '✏️ Usuario ya votó' : '✨ Primer voto'}`);
@@ -1466,28 +1345,21 @@ async function submitVote() {
     if (hasVote) {
       // ACTUALIZAR voto existente
       console.log('🔄 Actualizando voto...');
-      const controller2 = new AbortController();
-      const timeout2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo actualizar voto en 15 segundos');
-        controller2.abort();
-      }, 15000);
-
       const updateRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
         {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             voto: selectedVote,
             nombre: name
-          }),
-          signal: controller2.signal
+          })
         }
-      ).finally(() => clearTimeout(timeout2));
-
+      );
       if (!updateRes.ok) {
         const err = await updateRes.text();
         throw new Error(`No se pudo actualizar: ${updateRes.status} - ${err}`);
@@ -1496,29 +1368,22 @@ async function submitVote() {
     } else {
       // CREAR nuevo voto
       console.log('➕ Creando primer voto...');
-      const controller2 = new AbortController();
-      const timeout2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo crear voto en 15 segundos');
-        controller2.abort();
-      }, 15000);
-
       const createRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos`,
         {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             email: userEmail,
             nombre: name,
             voto: selectedVote
-          }),
-          signal: controller2.signal
+          })
         }
-      ).finally(() => clearTimeout(timeout2));
-
+      );
       if (!createRes.ok) {
         const err = await createRes.text();
         throw new Error(`No se pudo guardar: ${createRes.status} - ${err}`);
@@ -1527,24 +1392,18 @@ async function submitVote() {
 
       // Marcar usuario como votado
       console.log('🔄 Actualizando estado...');
-      const controller3 = new AbortController();
-      const timeout3 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo actualizar estado usuario en 15 segundos');
-        controller3.abort();
-      }, 15000);
-
       await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
         {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ votado: true, voto_actual: selectedVote }),
-          signal: controller3.signal
+          body: JSON.stringify({ votado: true, voto_actual: selectedVote })
         }
-      ).finally(() => clearTimeout(timeout3));
+      );
     }
 
     // Guardar en localStorage
@@ -1603,122 +1462,11 @@ const style = document.createElement('style');
 style.textContent=`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`;
 document.head.appendChild(style);
 
-// ── VALIDACIÓN DE TIEMPO DE VOTACIÓN ──────────────────────────────────
-let votingOpen = true;
-
-function parseMatchTime(dateStr) {
-  // Parsear formato: "14 Jun · 21:00h" o "14 Jun · 21:00"
-  // Asume el año actual
-  try {
-    // Limpiar el string
-    dateStr = dateStr.replace(/[·]/g, '').trim();
-
-    // Intenta varios formatos
-    const date = new Date();
-    const currentYear = date.getFullYear();
-
-    // Buscar día y mes
-    const dayMonthMatch = dateStr.match(/(\d{1,2})\s+([a-zA-Z]{3})/i);
-    if(!dayMonthMatch) return null;
-
-    const day = parseInt(dayMonthMatch[1]);
-    const monthStr = dayMonthMatch[2];
-    const months = {
-      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
-      'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
-    };
-    const month = months[monthStr.toLowerCase()];
-
-    // Buscar hora
-    const timeMatch = dateStr.match(/(\d{1,2}):(\d{2})/);
-    if(!timeMatch) return null;
-
-    const hour = parseInt(timeMatch[1]);
-    const minute = parseInt(timeMatch[2]);
-
-    return new Date(currentYear, month, day, hour, minute, 0);
-  } catch(e) {
-    console.error('Error parsing match time:', e);
-    return null;
-  }
-}
-
-function isVotingOpen() {
-  const dateStr = CONFIG.date || localStorage.getItem('config_date');
-  const matchTime = parseMatchTime(dateStr);
-
-  if(!matchTime) {
-    console.warn('No valid match time configured');
-    return true; // Permitir votación si no hay fecha válida
-  }
-
-  const now = new Date();
-  return now < matchTime;
-}
-
-function getTimeUntilMatch() {
-  const dateStr = CONFIG.date || localStorage.getItem('config_date');
-  const matchTime = parseMatchTime(dateStr);
-
-  if(!matchTime) return null;
-
-  const now = new Date();
-  const diff = matchTime - now;
-
-  if(diff <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-  }
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-  return { days, hours, minutes, seconds, expired: false };
-}
-
-function updateVotingStatus() {
-  votingOpen = isVotingOpen();
-
-  // Actualizar estado visual en botones
-  const btnVote = document.getElementById('btnVote');
-  const votingStatus = document.getElementById('votingStatus');
-
-  if(!votingOpen) {
-    if(btnVote) {
-      btnVote.disabled = true;
-      btnVote.style.opacity = '0.5';
-      btnVote.style.cursor = 'not-allowed';
-    }
-    if(votingStatus) {
-      votingStatus.style.display = 'block';
-    }
-  } else {
-    if(btnVote) {
-      btnVote.disabled = false;
-      btnVote.style.opacity = '1';
-      btnVote.style.cursor = 'pointer';
-    }
-    if(votingStatus) {
-      votingStatus.style.display = 'none';
-    }
-  }
-}
-
-// ── INICIALIZACIÓN ────────────────────────────────────────────────────
-// Cargar configuración al iniciar
-updateConfigFromStorage();
-
-// Verificar estado de votación al iniciar y cada segundo
-updateVotingStatus();
-setInterval(updateVotingStatus, 1000);
-
-// Escuchar cambios en localStorage (desde admin)
-window.addEventListener('storage', function(e) {
-  if(e.key && e.key.startsWith('config_')) {
-    console.log('🔄 Configuración actualizada desde admin');
-    updateConfigFromStorage();
-    updateVotingStatus();
+// ── DETECT RIFA UPDATES FROM ADMIN ─────────────────────────────────
+window.addEventListener('storage', (e) => {
+  if (e.key === 'rifa_updated_at') {
+    console.log('🔄 Nueva rifa creada por admin, recargando configuración...');
+    loadRifaConfigFromSupabase();
   }
 });
 </script>
