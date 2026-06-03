@@ -1470,10 +1470,10 @@ async function submitVote() {
   try {
     console.log('💾 Procesando voto...');
 
-    // Verificar si el usuario YA tiene un voto
-    console.log('🔍 Buscando voto anterior de:', userPhone);
-    const existingVotes = await fetch(
-      `${SUPABASE_URL}/rest/v1/rifa_votos?phone=eq.${encodeURIComponent(userPhone)}&select=id`,
+    // Verificar si el usuario YA tiene un voto (fuente de verdad: tabla rifa_usuarios)
+    console.log('🔍 Buscando usuario:', userPhone);
+    const userRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/rifa_usuarios?phone=eq.${encodeURIComponent(userPhone)}&select=votado,voto_actual`,
       {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -1481,25 +1481,28 @@ async function submitVote() {
         }
       }
     );
-    const votes = await existingVotes.json();
-    const hasVote = Array.isArray(votes) && votes.length > 0;
+    const users = await userRes.json();
+    const user = users && users.length > 0 ? users[0] : null;
+    const hasVote = user && user.votado;
     console.log(`${hasVote ? '✏️ Usuario ya votó' : '✨ Primer voto'}`);
 
     if (hasVote) {
-      // ACTUALIZAR voto existente
-      console.log('🔄 Actualizando voto...');
+      // ACTUALIZAR voto existente - usar UPSERT para evitar duplicados
+      console.log('🔄 Actualizando voto con UPSERT...');
       const updateRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/rifa_votos?phone=eq.${encodeURIComponent(userPhone)}`,
+        `${SUPABASE_URL}/rest/v1/rifa_votos`,
         {
-          method: 'PATCH',
+          method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
             'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
           },
           body: JSON.stringify({
-            voto: selectedVote,
-            nombre: name
+            phone: userPhone,
+            nombre: name,
+            voto: selectedVote
           })
         }
       );
@@ -1534,7 +1537,7 @@ async function submitVote() {
       console.log('✅ Voto creado');
 
       // Marcar usuario como votado
-      console.log('🔄 Actualizando estado...');
+      console.log('🔄 Actualizando estado del usuario...');
       await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_usuarios?phone=eq.${encodeURIComponent(userPhone)}`,
         {
