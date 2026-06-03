@@ -756,7 +756,7 @@ async function saveNewRifa() {
   try {
     // 1️⃣ BORRAR TODOS LOS VOTOS DE LA RIFA ANTERIOR
     console.log('🔄 Borrando votos anteriores...');
-    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos`, {
+    const deleteVotesRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?id=is.not.null`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
@@ -773,7 +773,7 @@ async function saveNewRifa() {
 
     // 2️⃣ BORRAR TODOS LOS USUARIOS - RESET COMPLETO
     console.log('🔄 Borrando todos los usuarios (reset total)...');
-    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
+    const deleteUsersRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?id=is.not.null`, {
       method: 'DELETE',
       headers: {
         'apikey': SUPABASE_KEY,
