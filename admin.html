@@ -536,6 +536,7 @@ function handleAdminLogin(e) {
   sessionStorage.setItem('adminLogged', 'true');
   showDashboard();
   loadVotes();
+  loadCurrentRifaToForm();
 }
 
 function logout() {
@@ -552,7 +553,6 @@ function showDashboard() {
 
 async function getConfig() {
   try {
-    // Intentar leer de Supabase primero
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -564,6 +564,7 @@ async function getConfig() {
       const data = await res.json();
       if (data && data.length > 0) {
         const config = data[0];
+        console.log('✅ Configuración cargada de Supabase:', config);
         return {
           team1: config.team1 || 'España',
           team2: config.team2 || 'Argentina',
@@ -575,22 +576,36 @@ async function getConfig() {
       }
     }
   } catch (err) {
-    console.log('⚠️ No se pudo leer config de Supabase, usando localStorage:', err);
+    console.log('⚠️ No se pudo leer config de Supabase:', err);
   }
 
-  // Respaldo: usar localStorage
+  console.log('📦 Usando valores por defecto');
   return {
-    team1: localStorage.getItem('config_team1') || 'España',
-    team2: localStorage.getItem('config_team2') || 'Argentina',
-    flag1: localStorage.getItem('config_flag1') || '🇪🇸',
-    flag2: localStorage.getItem('config_flag2') || '🇦🇷',
-    prize: localStorage.getItem('config_prize') || '$50 en consumo',
-    is_closed: localStorage.getItem('rifa_is_closed') === 'true'
+    team1: 'España',
+    team2: 'Argentina',
+    flag1: '🇪🇸',
+    flag2: '🇦🇷',
+    prize: '$50 en consumo',
+    is_closed: false
   };
 }
 
-function updateTeamLabels() {
-  const config = getConfig();
+async function loadCurrentRifaToForm() {
+  try {
+    const config = await getConfig();
+    document.getElementById('newTeam1').value = config.team1;
+    document.getElementById('newTeam2').value = config.team2;
+    document.getElementById('newFlag1').value = config.flag1;
+    document.getElementById('newFlag2').value = config.flag2;
+    document.getElementById('newPrize').value = config.prize;
+    console.log('✅ Configuración cargada en el formulario:', config);
+  } catch (err) {
+    console.error('❌ Error cargando configuración:', err);
+  }
+}
+
+async function updateTeamLabels() {
+  const config = await getConfig();
   // Actualizar los cards de stats
   const homeCard = document.querySelector('.dash-grid .card:nth-child(2) h3');
   const awayCard = document.querySelector('.dash-grid .card:nth-child(4) h3');
@@ -599,8 +614,8 @@ function updateTeamLabels() {
   if(awayCard) awayCard.textContent = `${config.flag2} ${config.team2}`;
 }
 
-function updateMatchResultDropdown() {
-  const config = getConfig();
+async function updateMatchResultDropdown() {
+  const config = await getConfig();
   const select = document.getElementById('matchResult');
 
   select.innerHTML = `
@@ -638,15 +653,15 @@ async function loadVotes() {
     document.getElementById('awayPercent').textContent = total > 0 ? Math.round(away/total*100) + '%' : '0%';
 
     // Actualizar labels de equipos dinámicamente
-    updateTeamLabels();
-    updateMatchResultDropdown();
+    await updateTeamLabels();
+    await updateMatchResultDropdown();
 
     // Tabla de votos (con equipos dinámicos)
     const tbody = document.getElementById('votesBody');
     tbody.innerHTML = voteData.map(v => `
       <tr>
         <td>${v.nombre || '—'}</td>
-        <td style="font-size:0.85rem;">${v.email || '—'}</td>
+        <td style="font-size:0.85rem;">${v.phone || '—'}</td>
         <td>
           <span class="vote-badge vote-${v.voto}">
             ${v.voto === 'home' ? `${config.flag1} ${config.team1}` : v.voto === 'draw' ? '🤝 Empate' : `${config.flag2} ${config.team2}`}
@@ -675,7 +690,7 @@ function updateWinners() {
 
   const winnersList = document.getElementById('winnersList');
   winnersList.innerHTML = winners.length > 0
-    ? winners.map(w => `<div style="margin:8px 0;"><strong>${w.nombre}</strong><br><small style="color:var(--muted);">${w.email}</small></div>`).join('')
+    ? winners.map(w => `<div style="margin:8px 0;"><strong>${w.nombre}</strong><br><small style="color:var(--muted);">${w.phone}</small></div>`).join('')
     : '<p style="color:var(--muted);">No hay ganadores para este resultado</p>';
 
   document.getElementById('winnersSection').style.display = 'block';
@@ -691,7 +706,7 @@ function selectWinner() {
   }
 
   if(winners.length === 1) {
-    alert(`🎉 Ganador: ${winners[0].nombre} (${winners[0].email})`);
+    alert(`🎉 Ganador: ${winners[0].nombre} (${winners[0].phone})`);
     return;
   }
 
@@ -708,7 +723,7 @@ function selectWinner() {
       <div style="margin:12px 0;">
         <strong style="font-size:1.2rem;">${random.nombre}</strong>
         <div class="loading">⏳</div>
-        <small style="color:var(--muted);">${random.email}</small>
+        <small style="color:var(--muted);">${random.phone}</small>
       </div>
     `;
     count++;
@@ -720,7 +735,7 @@ function selectWinner() {
         <div style="margin:12px 0;padding:16px;background:rgba(34,197,94,0.1);border-radius:12px;">
           <div style="font-size:3rem;margin-bottom:12px;">🎉</div>
           <strong style="font-size:1.4rem;display:block;margin-bottom:8px;">${selected.nombre}</strong>
-          <small style="color:var(--muted);">${selected.email}</small>
+          <small style="color:var(--muted);">${selected.phone}</small>
         </div>
       `;
       btn.disabled = false;
