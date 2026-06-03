@@ -767,6 +767,17 @@ h1.main-title span { color: var(--oro); }
   </div>
 </div>
 
+<!-- VOTACIONES CERRADAS MODAL -->
+<div class="login-modal" id="closedModal" style="display:none;">
+  <div class="login-box" style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+    <h3>Votaciones Cerradas</h3>
+    <p style="margin-bottom:20px;">Las votaciones de este partido han terminado.</p>
+    <p style="color:var(--muted);font-size:0.9rem;">Gracias por participar. Regresa cuando comience el próximo partido.</p>
+    <button type="button" class="btn-login" onclick="document.getElementById('closedModal').classList.remove('active')" style="margin-top:20px;">Entendido</button>
+  </div>
+</div>
+
 <div class="page">
 
 <!-- ══ STEP 1: BIENVENIDA ══ -->
@@ -1083,6 +1094,11 @@ loadRifaConfigFromSupabase();
 
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
+  if (CONFIG.is_closed) {
+    console.log('🔒 Votaciones cerradas, mostrando modal de cerrado');
+    document.getElementById('closedModal').classList.add('active');
+    return;
+  }
   document.getElementById('loginModal').classList.add('active');
   document.getElementById('loginPhone').focus();
 }
@@ -1491,6 +1507,9 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'rifa_updated_at') {
     console.log('🔄 Nueva rifa creada por admin, recargando configuración...');
     loadRifaConfigFromSupabase();
+    // Cerrar modales cuando se abre una nueva rifa
+    document.getElementById('loginModal').classList.remove('active');
+    document.getElementById('closedModal').classList.remove('active');
   }
 });
 </script>
