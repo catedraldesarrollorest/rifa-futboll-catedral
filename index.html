@@ -1082,14 +1082,13 @@ async function loadRifaConfigFromSupabase() {
     console.log('📡 Cargando configuración de rifa desde Supabase...');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: Supabase no responde en 5 segundos');
+      console.error('⏱️ TIMEOUT: Supabase no responde en 15 segundos');
       controller.abort();
-    }, 5000);
+    }, 15000);
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+        'apikey': SUPABASE_KEY
       },
       signal: controller.signal
     });
@@ -1188,10 +1187,13 @@ async function handleLogin(e) {
   try {
     // Intentar buscar usuario en Supabase con timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: Búsqueda de usuario no responde en 15 segundos');
+      controller.abort();
+    }, 15000);
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      headers: { 'apikey': SUPABASE_KEY },
       signal: controller.signal
     }).finally(() => clearTimeout(timeoutId));
 
@@ -1205,15 +1207,14 @@ async function handleLogin(e) {
       const newPin = generatePin();
       const controller2 = new AbortController();
       const timeoutId2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: POST usuario no responde');
+        console.error('⏱️ TIMEOUT: Crear usuario no responde en 15 segundos');
         controller2.abort();
-      }, 5000);
+      }, 15000);
 
       const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -1431,16 +1432,15 @@ async function submitVote() {
     console.log('🔍 Buscando voto anterior de:', userEmail);
     const controller1 = new AbortController();
     const timeout1 = setTimeout(() => {
-      console.error('⏱️ TIMEOUT: No se pudo verificar votos anteriores');
+      console.error('⏱️ TIMEOUT: No se pudo verificar votos anteriores en 15 segundos');
       controller1.abort();
-    }, 5000);
+    }, 15000);
 
     const existingVotes = await fetch(
       `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
       {
         headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
+          'apikey': SUPABASE_KEY
         },
         signal: controller1.signal
       }
@@ -1455,9 +1455,9 @@ async function submitVote() {
       console.log('🔄 Actualizando voto...');
       const controller2 = new AbortController();
       const timeout2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo actualizar voto');
+        console.error('⏱️ TIMEOUT: No se pudo actualizar voto en 15 segundos');
         controller2.abort();
-      }, 5000);
+      }, 15000);
 
       const updateRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
@@ -1465,7 +1465,6 @@ async function submitVote() {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -1486,9 +1485,9 @@ async function submitVote() {
       console.log('➕ Creando primer voto...');
       const controller2 = new AbortController();
       const timeout2 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo crear voto');
+        console.error('⏱️ TIMEOUT: No se pudo crear voto en 15 segundos');
         controller2.abort();
-      }, 5000);
+      }, 15000);
 
       const createRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos`,
@@ -1496,7 +1495,6 @@ async function submitVote() {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -1518,9 +1516,9 @@ async function submitVote() {
       console.log('🔄 Actualizando estado...');
       const controller3 = new AbortController();
       const timeout3 = setTimeout(() => {
-        console.error('⏱️ TIMEOUT: No se pudo actualizar estado usuario');
+        console.error('⏱️ TIMEOUT: No se pudo actualizar estado usuario en 15 segundos');
         controller3.abort();
-      }, 5000);
+      }, 15000);
 
       await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
@@ -1528,7 +1526,6 @@ async function submitVote() {
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ votado: true, voto_actual: selectedVote }),
