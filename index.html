@@ -1100,8 +1100,10 @@ function updateVotingButtonStatus() {
     btn.style.opacity = '0.6';
     btn.style.cursor = 'not-allowed';
     btn.style.pointerEvents = 'none';
-    status.textContent = 'Las votaciones estan cerradas hasta el próximo partido';
-    status.style.color = 'var(--oro)';
+    status.textContent = '🔒 Las votaciones están cerradas hasta el próximo partido';
+    status.style.color = '#c9a84c';
+    status.style.opacity = '1';
+    status.style.fontWeight = '600';
     console.log('🔒 Botón de votación desactivado - votaciones cerradas');
   } else {
     btn.textContent = '¡Quiero participar! →';
@@ -1110,6 +1112,8 @@ function updateVotingButtonStatus() {
     btn.style.pointerEvents = 'auto';
     status.textContent = 'Gratis · Solo necesitas escanear este QR';
     status.style.color = 'var(--muted)';
+    status.style.opacity = '0';
+    status.style.fontWeight = '400';
     console.log('✅ Botón de votación activado - votaciones abiertas');
   }
 }
