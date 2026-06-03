@@ -1327,9 +1327,8 @@ async function handleLogin(e) {
       document.getElementById('loginPhone').value = '';
       hideLogin();
       console.log('📍 ANTES DE goStep(2)');
-      console.log('📍 rf_previous_vote:', localStorage.getItem('rf_previous_vote'));
-      goStep(2);
-      console.log('📍 DESPUÉS DE goStep(2)');
+      console.log('✨ NUEVO USUARIO - ir directo a votar');
+      goStep(3);
       return;
     } else {
       console.log('👤 USUARIO EXISTENTE:', users[0]);
@@ -1361,8 +1360,8 @@ async function handleLogin(e) {
         goStep('step2b');
         return;
       } else {
-        console.log('📍 Ir a step 2 (devolviendo sin voto)');
-        goStep(2);
+        console.log('📍 Ir a step 3 (devolviendo sin voto - directo a votar)');
+        goStep(3);
         return;
       }
     }
