@@ -618,19 +618,6 @@ const countries = [
   { name: 'Uzbekistán', flag: '🇺🇿' },
   { name: 'Uruguay', flag: '🇺🇾' }
 ];
-        <span>${country.name}</span>
-      </div>
-    `).join('');
-
-    suggestionsDiv.style.display = 'block';
-  });
-
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      suggestionsDiv.style.display = 'none';
-    }, 200);
-  });
-}
 
 function setupCountrySearch(inputId, flagId, suggestionsId) {
   const input = document.getElementById(inputId);
