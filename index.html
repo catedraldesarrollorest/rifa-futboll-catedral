@@ -956,6 +956,10 @@ h1.main-title span { color: var(--oro); }
 </div><!-- /page -->
 
 <script>
+// ── SUPABASE CONFIG ────────────────────────────────────────────────
+const SUPABASE_URL = 'https://tigbtwqwfwcqdfwlndkf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2J0d3F3ZndjcWRmd2xuZGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTUwNTIsImV4cCI6MjA5NTk5MTA1Mn0.sT8bwHKzRZ99FaRog7vD8H2LuYdxdM5V-w-vHHWgvOQ';
+
 // ── CONFIGURACIÓN ─────────────────────────────────────────────────
 // Edita estos datos antes de imprimir el QR
 const CONFIG = {
@@ -1457,6 +1461,14 @@ function launchConfetti() {
 const style = document.createElement('style');
 style.textContent=`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`;
 document.head.appendChild(style);
+
+// ── DETECT RIFA UPDATES FROM ADMIN ─────────────────────────────────
+window.addEventListener('storage', (e) => {
+  if (e.key === 'rifa_updated_at') {
+    console.log('🔄 Nueva rifa creada por admin, recargando configuración...');
+    loadRifaConfigFromSupabase();
+  }
+});
 </script>
 </body>
 </html>
