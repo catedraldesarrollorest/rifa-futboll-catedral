@@ -1044,8 +1044,17 @@ async function loadRifaConfigFromSupabase() {
         CONFIG.team2 = config.team2 || 'Argentina';
         CONFIG.flag1 = config.flag1 || '🇪🇸';
         CONFIG.flag2 = config.flag2 || '🇦🇷';
-        CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
         CONFIG.prize = config.prize || '$50 en consumo';
+        CONFIG.is_closed = config.is_closed || false;
+
+        // Si la rifa está cerrada, mostrar aviso
+        if (CONFIG.is_closed) {
+          console.log('🔐 Votación cerrada');
+          const votingSection = document.getElementById('step4');
+          if (votingSection) {
+            votingSection.innerHTML = '<div style="padding:40px;text-align:center;"><h2>🔐 Votación Cerrada</h2><p style="color:var(--muted);margin-top:16px;">La votación ha finalizado. Gracias por participar.</p></div>';
+          }
+        }
 
         console.log('✅ Configuración cargada de Supabase:', CONFIG);
 
@@ -1321,6 +1330,12 @@ function confirmExistingVote() {
 async function submitVote() {
   const name = document.getElementById('voterName').value.trim();
   if(!selectedVote || !name) return;
+
+  // Verificar si la votación está cerrada
+  if (CONFIG.is_closed) {
+    alert('❌ La votación ha sido cerrada. No se aceptan más votos.');
+    return;
+  }
 
   const userEmail = localStorage.getItem('rf_user_email');
 

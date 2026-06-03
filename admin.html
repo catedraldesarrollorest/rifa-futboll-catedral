@@ -409,12 +409,13 @@ body {
     </div>
   </div>
 
-  <!-- COUNTDOWN TIMER -->
+  <!-- CERRAR VOTACIÓN -->
   <div class="dash-section">
-    <h2>⏱️ Tiempo para Cierre</h2>
-    <div class="card" style="text-align: center; padding: 24px;">
-      <div class="number" id="countdownTimer" style="font-size: 3rem; font-weight: 700;">--:--</div>
-      <div class="sub" id="countdownStatus">Cargando horario...</div>
+    <h2>🔐 Cerrar Votación</h2>
+    <div class="resultado-box">
+      <p style="margin-bottom: 16px; color: var(--muted);">Cierra la votación para que nadie más pueda votar. Los votos registrados se mantendrán.</p>
+      <button type="button" class="btn-result" onclick="closeVoting()" style="background: linear-gradient(135deg, #ef4444, #dc2626);">🔒 Cerrar Votación Ahora</button>
+      <div id="closeVotingStatus" style="margin-top:12px; padding:12px; border-radius:8px; display:none;"></div>
     </div>
   </div>
 
@@ -438,10 +439,6 @@ body {
         <div class="form-group">
           <label>Emoji/Bandera 2</label>
           <input type="text" id="newFlag2" placeholder="Ej: 🇦🇷" value="🇦🇷" />
-        </div>
-        <div class="form-group">
-          <label>Fecha y hora del partido</label>
-          <input type="datetime-local" id="newDate" />
         </div>
         <div class="form-group">
           <label>Premio</label>
@@ -539,7 +536,6 @@ function handleAdminLogin(e) {
   sessionStorage.setItem('adminLogged', 'true');
   showDashboard();
   loadVotes();
-  updateCountdown();
 }
 
 function logout() {
@@ -573,8 +569,8 @@ async function getConfig() {
           team2: config.team2 || 'Argentina',
           flag1: config.flag1 || '🇪🇸',
           flag2: config.flag2 || '🇦🇷',
-          date: config.match_date || '',
-          prize: config.prize || '$50 en consumo'
+          prize: config.prize || '$50 en consumo',
+          is_closed: config.is_closed || false
         };
       }
     }
@@ -588,8 +584,8 @@ async function getConfig() {
     team2: localStorage.getItem('config_team2') || 'Argentina',
     flag1: localStorage.getItem('config_flag1') || '🇪🇸',
     flag2: localStorage.getItem('config_flag2') || '🇦🇷',
-    date: localStorage.getItem('config_date') || '',
-    prize: localStorage.getItem('config_prize') || '$50 en consumo'
+    prize: localStorage.getItem('config_prize') || '$50 en consumo',
+    is_closed: localStorage.getItem('rifa_is_closed') === 'true'
   };
 }
 
@@ -739,11 +735,10 @@ async function saveNewRifa() {
   const team2 = document.getElementById('newTeam2').value.trim();
   const flag1 = document.getElementById('newFlag1').value.trim();
   const flag2 = document.getElementById('newFlag2').value.trim();
-  const dateStr = document.getElementById('newDate').value;
   const prize = document.getElementById('newPrize').value.trim();
   const statusEl = document.getElementById('newRifaStatus');
 
-  if (!team1 || !team2 || !flag1 || !flag2 || !dateStr || !prize) {
+  if (!team1 || !team2 || !flag1 || !flag2 || !prize) {
     statusEl.style.display = 'block';
     statusEl.style.background = 'rgba(139,26,26,0.2)';
     statusEl.style.borderLeft = '4px solid #8b1a1a';
@@ -807,8 +802,8 @@ async function saveNewRifa() {
         team2: team2,
         flag1: flag1,
         flag2: flag2,
-        match_date: dateStr,
         prize: prize,
+        is_closed: false,
         updated_at: new Date().toISOString()
       })
     });
@@ -824,7 +819,6 @@ async function saveNewRifa() {
     localStorage.setItem('config_team2', team2);
     localStorage.setItem('config_flag1', flag1);
     localStorage.setItem('config_flag2', flag2);
-    localStorage.setItem('config_date', dateStr);
     localStorage.setItem('config_prize', prize);
 
     // 4️⃣ RECARGAR VOTOS (DEBERÍA ESTAR VACÍO)
@@ -839,9 +833,6 @@ async function saveNewRifa() {
 
     console.log('🎉 Nueva rifa lista - RESET COMPLETO');
 
-    // Actualizar countdown timer
-    updateCountdown();
-
     // Guardar timestamp de actualización en localStorage para notificar a votantes
     localStorage.setItem('rifa_updated_at', new Date().getTime());
 
@@ -851,7 +842,6 @@ async function saveNewRifa() {
       document.getElementById('newTeam2').value = 'Argentina';
       document.getElementById('newFlag1').value = '🇪🇸';
       document.getElementById('newFlag2').value = '🇦🇷';
-      document.getElementById('newDate').value = '';
       document.getElementById('newPrize').value = '$50 en consumo';
     }, 2000);
 
@@ -865,64 +855,53 @@ async function saveNewRifa() {
 }
 
 // ACTUALIZAR COUNTDOWN TIMER
-let countdownInterval;
-async function updateCountdown() {
+// CERRAR VOTACIÓN
+async function closeVoting() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=match_date`, {
+    console.log('🔐 Cerrando votación...');
+    const statusEl = document.getElementById('closeVotingStatus');
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(201,168,76,0.1)';
+    statusEl.style.borderLeft = '4px solid #c9a84c';
+    statusEl.style.color = '#c9a84c';
+    statusEl.textContent = '⏳ Cerrando votación...';
+
+    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1`, {
+      method: 'PATCH',
       headers: {
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        is_closed: true,
+        updated_at: new Date().toISOString()
+      })
     });
 
-    if (!res.ok) {
-      document.getElementById('countdownStatus').textContent = '⚠️ Error cargando horario';
-      return;
+    if (!updateRes.ok) {
+      const err = await updateRes.text();
+      throw new Error(`No se pudo cerrar votación: ${updateRes.status} - ${err}`);
     }
 
-    const data = await res.json();
-    const matchDate = data && data.length > 0 ? data[0].match_date : null;
+    console.log('✅ Votación cerrada');
+    localStorage.setItem('rifa_is_closed', 'true');
 
-    if (!matchDate) {
-      document.getElementById('countdownTimer').textContent = '--:--';
-      document.getElementById('countdownStatus').textContent = 'Sin horario configurado';
-      return;
-    }
+    statusEl.style.background = 'rgba(34,197,94,0.1)';
+    statusEl.style.borderLeft = '4px solid #22c55e';
+    statusEl.style.color = '#22c55e';
+    statusEl.textContent = '✅ ¡Votación cerrada! Nadie puede votar más.';
 
-    // Función para actualizar la pantalla cada segundo
-    function updateDisplay() {
-      const now = new Date();
-      const match = new Date(matchDate);
-      const diff = match - now;
-
-      if (diff < 0) {
-        document.getElementById('countdownTimer').textContent = '✓';
-        document.getElementById('countdownStatus').textContent = 'Partido en vivo o finalizado';
-        return;
-      }
-
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-
-      document.getElementById('countdownTimer').textContent =
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-      const matchDateStr = match.toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
-      document.getElementById('countdownStatus').textContent = `⏰ Inicio: ${matchDateStr}`;
-    }
-
-    // Actualizar inmediatamente
-    updateDisplay();
-
-    // Limpiar interval anterior si existe
-    if (countdownInterval) clearInterval(countdownInterval);
-
-    // Actualizar cada segundo
-    countdownInterval = setInterval(updateDisplay, 1000);
+    setTimeout(() => {
+      loadVotes();
+    }, 2000);
   } catch (err) {
-    console.error('❌ Error actualizando countdown:', err);
-    document.getElementById('countdownStatus').textContent = '⚠️ Error en el countdown';
+    console.error('❌ Error cerrando votación:', err);
+    const statusEl = document.getElementById('closeVotingStatus');
+    statusEl.style.background = 'rgba(139,26,26,0.2)';
+    statusEl.style.borderLeft = '4px solid #8b1a1a';
+    statusEl.style.color = '#ff6b6b';
+    statusEl.textContent = `❌ Error: ${err.message}`;
   }
 }
 
@@ -932,7 +911,6 @@ if(!sessionStorage.getItem('adminLogged')) {
 } else {
   showDashboard();
   loadVotes();
-  updateCountdown();
 }
 </script>
 <!-- Vercel redeploy trigger -->
