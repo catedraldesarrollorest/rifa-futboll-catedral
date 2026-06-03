@@ -583,21 +583,22 @@ h1.main-title span { color: var(--oro); }
 }
 
 .confetti-anim {
-  display: block;
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px;
   animation: pop 0.5s cubic-bezier(0.36,0.07,0.19,0.97);
   position: relative;
-  width: 180px;
-  height: 180px;
-  margin: 0 auto 24px;
+  width: clamp(200px, 40vw, 280px);
+  height: clamp(200px, 40vw, 280px);
 }
 
 .confetti-anim::before {
   content: '';
   position: absolute;
-  inset: -20px;
+  inset: -30px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,168,76,0.6) 0%, rgba(201,168,76,0.3) 30%, transparent 70%);
+  background: radial-gradient(circle at 30% 30%, rgba(201,168,76,0.7) 0%, rgba(201,168,76,0.4) 25%, transparent 70%);
   animation: radial-glow 2s ease-in-out infinite;
   z-index: -1;
 }
@@ -607,6 +608,7 @@ h1.main-title span { color: var(--oro); }
   height: 100%;
   object-fit: contain;
   display: block;
+  filter: drop-shadow(0 8px 20px rgba(201,168,76,0.3));
 }
 
 @keyframes pop {
@@ -1047,8 +1049,6 @@ h1.main-title span { color: var(--oro); }
     El sorteo se hace <strong>en directo</strong> al finalizar el partido.<br>
     Síguenos en <strong>@lacatedralcuba</strong> para no perdértelo.
   </p>
-
-  <button class="btn-share" onclick="shareResult()">📤 Compartir con amigos</button>
 </div>
 
 </div><!-- /page -->
