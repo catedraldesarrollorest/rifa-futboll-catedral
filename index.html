@@ -1327,8 +1327,8 @@ async function handleLogin(e) {
       document.getElementById('loginPhone').value = '';
       hideLogin();
       console.log('📍 ANTES DE goStep(2)');
-      console.log('✨ NUEVO USUARIO - ir directo a votar');
-      goStep(3);
+      console.log('✨ NUEVO USUARIO - mostrar redes primero');
+      goStep(2);
       return;
     } else {
       console.log('👤 USUARIO EXISTENTE:', users[0]);
