@@ -632,6 +632,45 @@ const countries = [
   });
 }
 
+function setupCountrySearch(inputId, flagId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const flagInput = document.getElementById(flagId);
+  const suggestionsDiv = document.getElementById(suggestionsId);
+
+  input.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+
+    if (query.length === 0) {
+      suggestionsDiv.style.display = 'none';
+      return;
+    }
+
+    const filtered = countries.filter(c =>
+      c.name.toLowerCase().includes(query)
+    ).slice(0, 10);
+
+    if (filtered.length === 0) {
+      suggestionsDiv.style.display = 'none';
+      return;
+    }
+
+    suggestionsDiv.innerHTML = filtered.map(country => `
+      <div class="suggestion-item" onclick="selectCountry('${inputId}', '${flagId}', '${country.name}', '${country.flag}')">
+        <span class="suggestion-flag">${country.flag}</span>
+        <span>${country.name}</span>
+      </div>
+    `).join('');
+
+    suggestionsDiv.style.display = 'block';
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      suggestionsDiv.style.display = 'none';
+    }, 200);
+  });
+}
+
 function selectCountry(inputId, flagId, name, flag) {
   document.getElementById(inputId).value = name;
   document.getElementById(flagId).value = flag;
