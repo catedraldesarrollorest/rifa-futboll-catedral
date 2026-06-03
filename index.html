@@ -1096,12 +1096,6 @@ function checkAdminAccess() {
   document.getElementById('s1flag2').textContent = CONFIG.flag2;
   document.getElementById('s1prize').textContent = CONFIG.prize;
 
-  document.getElementById('tname1').textContent = CONFIG.team1;
-  document.getElementById('tname2').textContent = CONFIG.team2;
-  document.getElementById('flag1').textContent  = CONFIG.flag1;
-  document.getElementById('flag2').textContent  = CONFIG.flag2;
-  document.getElementById('matchDateStr').textContent = CONFIG.date;
-
   document.getElementById('vb-t1').textContent   = CONFIG.team1;
   document.getElementById('vb-t2').textContent   = CONFIG.team2;
   document.getElementById('vb-flag1').textContent = CONFIG.flag1;
@@ -1110,7 +1104,6 @@ function checkAdminAccess() {
   document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
   document.getElementById('tkt-prize').textContent  = CONFIG.prize;
 
-  // Verifica acceso admin
   checkAdminAccess();
 })();
 
@@ -1145,11 +1138,6 @@ async function loadRifaConfigFromSupabase() {
         document.getElementById('s1flag1').textContent = CONFIG.flag1;
         document.getElementById('s1flag2').textContent = CONFIG.flag2;
         document.getElementById('s1prize').textContent = CONFIG.prize;
-
-        document.getElementById('tname1').textContent = CONFIG.team1;
-        document.getElementById('tname2').textContent = CONFIG.team2;
-        document.getElementById('flag1').textContent  = CONFIG.flag1;
-        document.getElementById('flag2').textContent  = CONFIG.flag2;
 
         document.getElementById('vb-t1').textContent   = CONFIG.team1;
         document.getElementById('vb-t2').textContent   = CONFIG.team2;
