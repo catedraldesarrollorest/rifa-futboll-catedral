@@ -108,6 +108,11 @@ body::before {
   0%,100% { box-shadow: 0 0 30px rgba(201,168,76,0.3), inset 0 0 20px rgba(201,168,76,0.05); }
   50% { box-shadow: 0 0 50px rgba(201,168,76,0.5), inset 0 0 30px rgba(201,168,76,0.1); }
 }
+
+@keyframes blink-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
 .logo-ring .ball { font-size: 2.8rem; }
 .logo-ring .ball-img { height: 80px; width: auto; }
 
@@ -121,7 +126,7 @@ body::before {
   justify-content: center;
   margin: 32px auto;
   box-shadow: 0 0 40px rgba(201,168,76,0.4), inset 0 0 30px rgba(201,168,76,0.1);
-  animation: pulse-ring 3s infinite;
+  animation: blink-pulse 1.5s ease-in-out infinite;
   cursor: pointer;
   transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
   background: transparent;
@@ -896,11 +901,12 @@ h1.main-title span { color: var(--oro); }
     </div>
 
     <!-- Vote Ball Button -->
-    <div style="text-align:center;">
-      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Vota aquí</p>
+    <div style="text-align:center;margin-top:24px;">
+      <p style="font-size:1.1rem;color:var(--oro);margin-bottom:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">👇 Vota Aquí 👇</p>
       <button class="vote-ball" onclick="goStep(3)" style="border:none;background:transparent;padding:0;">
         <img src="pelotamundial.png" alt="Ir a votar" style="height:120px;width:auto;">
       </button>
+      <p style="font-size:0.9rem;color:var(--oro-claro);margin-top:12px;letter-spacing:1px;">Clickea la pelota →</p>
     </div>
   </div>
   <p class="skip-link" onclick="goStep(4)">Ya soy miembro, saltar este paso</p>
