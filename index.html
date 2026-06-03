@@ -1057,6 +1057,7 @@ async function loadRifaConfigFromSupabase() {
         CONFIG.flag2 = config.flag2 || '🇦🇷';
         CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
         CONFIG.prize = config.prize || '$50 en consumo';
+        CONFIG.is_closed = config.is_closed || false;
 
         console.log('✅ Configuración cargada de Supabase:', CONFIG);
 
