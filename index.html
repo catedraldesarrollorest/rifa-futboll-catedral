@@ -1165,10 +1165,14 @@ async function handleLogin(e) {
   localStorage.removeItem('rf_isReturning');
 
   try {
-    // Buscar usuario en Supabase
+    // Intentar buscar usuario en Supabase con timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(email)}`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    });
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
 
     const users = await res.json();
     console.log('🔍 Búsqueda de usuario:', email);
@@ -1257,9 +1261,20 @@ async function handleLogin(e) {
 
     errorEl.style.display = 'none';
   } catch(err) {
-    console.error('Error de login:', err);
-    errorEl.textContent = 'Error al conectar. Intenta de nuevo.';
-    errorEl.style.display = 'block';
+    console.error('❌ Error de login (intentando fallback):', err);
+
+    // FALLBACK: Usar localStorage si Supabase falla
+    console.log('📱 Usando modo offline con localStorage...');
+    const newPin = generatePin();
+    localStorage.setItem('rf_user_id', email);
+    localStorage.setItem('rf_user_email', email);
+    localStorage.setItem('rf_user_pin', newPin);
+    localStorage.removeItem('rf_previous_vote');
+    document.getElementById('loginEmail').value = '';
+    hideLogin();
+
+    console.log('✅ Usuario creado en localStorage. Entrando a step 2...');
+    goStep(2);
   }
 }
 
