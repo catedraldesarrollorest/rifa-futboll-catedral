@@ -85,26 +85,33 @@ DROP COLUMN IF EXISTS email CASCADE;
 
 ---
 
-## 🔧 Validación de Números de Teléfono Cubanos
+## 🔧 Validación de Números de Teléfono Internacionales
 
-La aplicación ahora valida que el teléfono tenga formato cubano:
+La aplicación ahora valida números de teléfono de cualquier país:
 
-**Formato válido:** `+5358867972`
+**Formatos válidos:**
+- `+1234567890` (con código de país)
+- `1234567890` (sin código de país)
+- `+1 234 567 890` (con espacios)
+- `(123) 456-7890` (con formatos mixtos)
 
-Desglose:
-- `+53` = Código de país (Cuba)
-- `5` o `8` = Código de área (móvil)
-- `8 dígitos` = El número
+**Requisitos:**
+- Mínimo 7 dígitos
+- Máximo 15 dígitos (estándar E.164)
+- Opcional: código de país con +
 
 **Ejemplos válidos:**
-- +5358867972
-- +5352123456
-- +5385555555
+- +12125551234 (USA)
+- 12125551234 (USA sin +)
+- +5358867972 (Cuba)
+- 5358867972 (Cuba sin +)
+- +34912345678 (España)
+- 912345678 (España sin +)
 
 **Ejemplos inválidos:**
-- 5358867972 (falta el +)
-- +5358867 (muy corto)
-- +53 358867972 (espacios)
+- 123456 (muy corto)
+- +1 (incompleto)
+- abc1234567 (contiene letras)
 
 ---
 
@@ -165,9 +172,10 @@ Columnas:
 El código en `index.html` ha sido actualizado:
 
 - ✅ Input de email → Input de teléfono
-- ✅ Validación de email → Validación cubana de teléfono
+- ✅ Validación de email → Validación internacional de teléfono
 - ✅ localStorage `rf_user_email` → `rf_user_phone`
 - ✅ Queries de Supabase: `email=eq.` → `phone=eq.`
+- ✅ Soporta números de cualquier país (con o sin +)
 
 ---
 
@@ -188,11 +196,17 @@ El código en `index.html` ha sido actualizado:
 
 ```
 1. Abre index.html
-2. Ingresa: +5358867972
+2. Ingresa tu teléfono: +1234567890 (o cualquier formato válido)
 3. Click "Continuar →"
 4. Deberías ver "✨ NUEVO USUARIO" en consola
 5. Si lo haces de nuevo con el mismo número: "👤 USUARIO EXISTENTE"
 ```
+
+**Prueba con diferentes formatos:**
+- `+1234567890` ✅
+- `1234567890` ✅
+- `(123) 456-7890` ✅
+- `123-456-7890` ✅
 
 ---
 

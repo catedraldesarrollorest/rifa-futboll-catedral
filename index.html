@@ -759,7 +759,7 @@ h1.main-title span { color: var(--oro); }
     <form class="login-form" onsubmit="handleLogin(event)">
       <div style="text-align:left;margin-bottom:12px;">
         <label style="font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tu teléfono</label>
-        <input type="tel" id="loginPhone" placeholder="+5358867972" required style="width:100%;" autofocus/>
+        <input type="tel" id="loginPhone" placeholder="+1234567890 o 1234567890" required style="width:100%;" autofocus/>
       </div>
       <button type="submit" class="btn-login">Continuar →</button>
     </form>
@@ -1095,9 +1095,15 @@ function generatePin() {
   return Math.floor(Math.random() * 9000 + 1000).toString();
 }
 
-function validateCubanPhone(phone) {
-  const cleaned = phone.replace(/\s/g, '');
-  const regex = /^\+53[5-8]\d{7}$/;
+function validateInternationalPhone(phone) {
+  // Limpiar: remover espacios, guiones, paréntesis, puntos
+  const cleaned = phone.replace(/[\s\-().​]/g, '');
+
+  // Aceptar formatos:
+  // +XXXXXXXXXXXXX (con país)
+  // XXXXXXXXXXXXX (sin país, mínimo 7 dígitos)
+  const regex = /^(\+?[1-9]\d{6,14})$/;
+
   return regex.test(cleaned);
 }
 
@@ -1112,8 +1118,8 @@ async function handleLogin(e) {
     return;
   }
 
-  if(!validateCubanPhone(phone)) {
-    errorEl.textContent = 'Formato inválido. Usa: +5358867972';
+  if(!validateInternationalPhone(phone)) {
+    errorEl.textContent = 'Teléfono inválido. Usa: +1234567890 o 1234567890';
     errorEl.style.display = 'block';
     return;
   }
