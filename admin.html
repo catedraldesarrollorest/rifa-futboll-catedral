@@ -547,40 +547,41 @@ function showDashboard() {
 async function getConfig() {
   try {
     // Intentar leer de Supabase primero
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: getConfig no responde en 5 segundos');
+      controller.abort();
+    }, 5000);
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    });
+      },
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const config = data[0];
-        return {
-          team1: config.team1 || 'España',
-          team2: config.team2 || 'Argentina',
-          flag1: config.flag1 || '🇪🇸',
-          flag2: config.flag2 || '🇦🇷',
-          date: config.match_date || '',
-          prize: config.prize || '$50 en consumo'
-        };
-      }
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const config = data[0];
+      console.log('✅ Config cargada de Supabase:', config);
+      return {
+        team1: config.team1 || 'España',
+        team2: config.team2 || 'Argentina',
+        flag1: config.flag1 || '🇪🇸',
+        flag2: config.flag2 || '🇦🇷',
+        date: config.match_date || '',
+        prize: config.prize || '$50 en consumo'
+      };
     }
   } catch (err) {
-    console.log('⚠️ No se pudo leer config de Supabase, usando localStorage:', err);
+    console.error('❌ Error cargando config de Supabase:', err.message, err);
+    throw err;
   }
-
-  // Respaldo: usar localStorage
-  return {
-    team1: localStorage.getItem('config_team1') || 'España',
-    team2: localStorage.getItem('config_team2') || 'Argentina',
-    flag1: localStorage.getItem('config_flag1') || '🇪🇸',
-    flag2: localStorage.getItem('config_flag2') || '🇦🇷',
-    date: localStorage.getItem('config_date') || '',
-    prize: localStorage.getItem('config_prize') || '$50 en consumo'
-  };
 }
 
 function updateTeamLabels(config) {
@@ -605,14 +606,27 @@ function updateMatchResultDropdown(config) {
 
 async function loadVotes() {
   try {
+    console.log('📡 Cargando votos de Supabase...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: loadVotes no responde en 5 segundos');
+      controller.abort();
+    }, 5000);
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_votos?order=timestamp.desc`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
-    });
+      },
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
 
     voteData = await res.json();
+    console.log('✅ Votos cargados:', voteData.length);
     const config = await getConfig();
 
     // Actualizar stats

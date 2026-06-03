@@ -1080,51 +1080,63 @@ function checkAdminAccess() {
 async function loadRifaConfigFromSupabase() {
   try {
     console.log('📡 Cargando configuración de rifa desde Supabase...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: Supabase no responde en 5 segundos');
+      controller.abort();
+    }, 5000);
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
+      },
+      signal: controller.signal
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const config = data[0];
-        CONFIG.team1 = config.team1 || 'España';
-        CONFIG.team2 = config.team2 || 'Argentina';
-        CONFIG.flag1 = config.flag1 || '🇪🇸';
-        CONFIG.flag2 = config.flag2 || '🇦🇷';
-        CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
-        CONFIG.prize = config.prize || '$50 en consumo';
+    clearTimeout(timeoutId);
 
-        console.log('✅ Configuración cargada de Supabase:', CONFIG);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
 
-        // Actualizar UI con la nueva configuración
-        document.getElementById('s1team1').textContent = CONFIG.team1;
-        document.getElementById('s1team2').textContent = CONFIG.team2;
-        document.getElementById('s1flag1').textContent = CONFIG.flag1;
-        document.getElementById('s1flag2').textContent = CONFIG.flag2;
-        document.getElementById('s1prize').textContent = CONFIG.prize;
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const config = data[0];
+      CONFIG.team1 = config.team1 || 'España';
+      CONFIG.team2 = config.team2 || 'Argentina';
+      CONFIG.flag1 = config.flag1 || '🇪🇸';
+      CONFIG.flag2 = config.flag2 || '🇦🇷';
+      CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
+      CONFIG.prize = config.prize || '$50 en consumo';
 
-        document.getElementById('tname1').textContent = CONFIG.team1;
-        document.getElementById('tname2').textContent = CONFIG.team2;
-        document.getElementById('flag1').textContent  = CONFIG.flag1;
-        document.getElementById('flag2').textContent  = CONFIG.flag2;
+      console.log('✅ Configuración cargada de Supabase:', CONFIG);
 
-        document.getElementById('vb-t1').textContent   = CONFIG.team1;
-        document.getElementById('vb-t2').textContent   = CONFIG.team2;
-        document.getElementById('vb-flag1').textContent = CONFIG.flag1;
-        document.getElementById('vb-flag2').textContent = CONFIG.flag2;
+      // Actualizar UI con la nueva configuración
+      document.getElementById('s1team1').textContent = CONFIG.team1;
+      document.getElementById('s1team2').textContent = CONFIG.team2;
+      document.getElementById('s1flag1').textContent = CONFIG.flag1;
+      document.getElementById('s1flag2').textContent = CONFIG.flag2;
+      document.getElementById('s1prize').textContent = CONFIG.prize;
 
-        document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
-        document.getElementById('tkt-prize').textContent = CONFIG.prize;
+      document.getElementById('tname1').textContent = CONFIG.team1;
+      document.getElementById('tname2').textContent = CONFIG.team2;
+      document.getElementById('flag1').textContent  = CONFIG.flag1;
+      document.getElementById('flag2').textContent  = CONFIG.flag2;
 
-        return true;
-      }
+      document.getElementById('vb-t1').textContent   = CONFIG.team1;
+      document.getElementById('vb-t2').textContent   = CONFIG.team2;
+      document.getElementById('vb-flag1').textContent = CONFIG.flag1;
+      document.getElementById('vb-flag2').textContent = CONFIG.flag2;
+
+      document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
+      document.getElementById('tkt-prize').textContent = CONFIG.prize;
+
+      return true;
     }
   } catch (err) {
-    console.log('⚠️ No se pudo cargar config de Supabase, usando valores por defecto:', err);
+    console.error('❌ Error cargando config de Supabase:', err.message, err);
+    throw err;
   }
   return false;
 }
@@ -1182,6 +1194,12 @@ async function handleLogin(e) {
       console.log('✨ NUEVO USUARIO - Creando...');
       // Nuevo usuario: generar PIN único
       const newPin = generatePin();
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => {
+        console.error('⏱️ TIMEOUT: POST usuario no responde');
+        controller2.abort();
+      }, 5000);
+
       const createRes = await fetch(`${SUPABASE_URL}/rest/v1/rifa_usuarios`, {
         method: 'POST',
         headers: {
@@ -1194,8 +1212,9 @@ async function handleLogin(e) {
           pin: newPin,
           activo: true,
           voto_actual: null
-        })
-      });
+        }),
+        signal: controller2.signal
+      }).finally(() => clearTimeout(timeoutId2));
 
       console.log('POST Status:', createRes.status, createRes.statusText);
       if(!createRes.ok) {
@@ -1401,15 +1420,23 @@ async function submitVote() {
 
     // Verificar si el usuario YA tiene un voto
     console.log('🔍 Buscando voto anterior de:', userEmail);
+    const controller1 = new AbortController();
+    const timeout1 = setTimeout(() => {
+      console.error('⏱️ TIMEOUT: No se pudo verificar votos anteriores');
+      controller1.abort();
+    }, 5000);
+
     const existingVotes = await fetch(
       `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}&select=id`,
       {
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
+        },
+        signal: controller1.signal
       }
-    );
+    ).finally(() => clearTimeout(timeout1));
+
     const votes = await existingVotes.json();
     const hasVote = Array.isArray(votes) && votes.length > 0;
     console.log(`${hasVote ? '✏️ Usuario ya votó' : '✨ Primer voto'}`);
@@ -1417,6 +1444,12 @@ async function submitVote() {
     if (hasVote) {
       // ACTUALIZAR voto existente
       console.log('🔄 Actualizando voto...');
+      const controller2 = new AbortController();
+      const timeout2 = setTimeout(() => {
+        console.error('⏱️ TIMEOUT: No se pudo actualizar voto');
+        controller2.abort();
+      }, 5000);
+
       const updateRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos?email=eq.${encodeURIComponent(userEmail)}`,
         {
@@ -1429,9 +1462,11 @@ async function submitVote() {
           body: JSON.stringify({
             voto: selectedVote,
             nombre: name
-          })
+          }),
+          signal: controller2.signal
         }
-      );
+      ).finally(() => clearTimeout(timeout2));
+
       if (!updateRes.ok) {
         const err = await updateRes.text();
         throw new Error(`No se pudo actualizar: ${updateRes.status} - ${err}`);
@@ -1440,6 +1475,12 @@ async function submitVote() {
     } else {
       // CREAR nuevo voto
       console.log('➕ Creando primer voto...');
+      const controller2 = new AbortController();
+      const timeout2 = setTimeout(() => {
+        console.error('⏱️ TIMEOUT: No se pudo crear voto');
+        controller2.abort();
+      }, 5000);
+
       const createRes = await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_votos`,
         {
@@ -1453,9 +1494,11 @@ async function submitVote() {
             email: userEmail,
             nombre: name,
             voto: selectedVote
-          })
+          }),
+          signal: controller2.signal
         }
-      );
+      ).finally(() => clearTimeout(timeout2));
+
       if (!createRes.ok) {
         const err = await createRes.text();
         throw new Error(`No se pudo guardar: ${createRes.status} - ${err}`);
@@ -1464,6 +1507,12 @@ async function submitVote() {
 
       // Marcar usuario como votado
       console.log('🔄 Actualizando estado...');
+      const controller3 = new AbortController();
+      const timeout3 = setTimeout(() => {
+        console.error('⏱️ TIMEOUT: No se pudo actualizar estado usuario');
+        controller3.abort();
+      }, 5000);
+
       await fetch(
         `${SUPABASE_URL}/rest/v1/rifa_usuarios?email=eq.${encodeURIComponent(userEmail)}`,
         {
@@ -1473,9 +1522,10 @@ async function submitVote() {
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ votado: true, voto_actual: selectedVote })
+          body: JSON.stringify({ votado: true, voto_actual: selectedVote }),
+          signal: controller3.signal
         }
-      );
+      ).finally(() => clearTimeout(timeout3));
     }
 
     // Guardar en localStorage
