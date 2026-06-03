@@ -805,8 +805,8 @@ h1.main-title span { color: var(--oro); }
     </div>
   </div>
 
-  <button class="btn-start" onclick="showLogin()">¡Quiero participar! →</button>
-  <p class="rules-hint">Gratis · Solo necesitas escanear este QR</p>
+  <button class="btn-start" id="btnStartVoting" onclick="showLogin()">¡Quiero participar! →</button>
+  <p class="rules-hint" id="votingStatus">Gratis · Solo necesitas escanear este QR</p>
 </div>
 
 <!-- ══ STEP 2: ÚNETE ══ -->
@@ -1090,8 +1090,33 @@ async function loadRifaConfigFromSupabase() {
   return false;
 }
 
+// Actualizar estado visual del botón de votación
+function updateVotingButtonStatus() {
+  const btn = document.getElementById('btnStartVoting');
+  const status = document.getElementById('votingStatus');
+
+  if (CONFIG.is_closed) {
+    btn.textContent = '🔒 Votaciones Cerradas';
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.style.pointerEvents = 'none';
+    status.textContent = 'Las votaciones estan cerradas hasta el próximo partido';
+    status.style.color = 'var(--oro)';
+    console.log('🔒 Botón de votación desactivado - votaciones cerradas');
+  } else {
+    btn.textContent = '¡Quiero participar! →';
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    btn.style.pointerEvents = 'auto';
+    status.textContent = 'Gratis · Solo necesitas escanear este QR';
+    status.style.color = 'var(--muted)';
+    console.log('✅ Botón de votación activado - votaciones abiertas');
+  }
+}
+
 // Cargar configuración cuando la página inicia
 loadRifaConfigFromSupabase();
+updateVotingButtonStatus();
 
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
@@ -1508,6 +1533,7 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'rifa_updated_at') {
     console.log('🔄 Nueva rifa creada por admin, recargando configuración...');
     loadRifaConfigFromSupabase();
+    updateVotingButtonStatus();
     // Cerrar modales cuando se abre una nueva rifa
     document.getElementById('loginModal').classList.remove('active');
     document.getElementById('closedModal').classList.remove('active');
