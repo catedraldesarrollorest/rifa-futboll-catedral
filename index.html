@@ -835,17 +835,45 @@ h1.main-title span { color: var(--oro); }
 <div class="step" id="step2">
   <div class="step2-header">
     <div class="step-num">Paso 1 de 2</div>
-    <h2>¿Listo para votar?</h2>
-    <p>Adelante, vota el resultado del partido</p>
+    <h2>Únete a la comunidad</h2>
+    <p>Síguenos para recibir el resultado del sorteo y futuros premios</p>
   </div>
 
-  <div class="join-body" style="align-items:center;justify-content:center;">
-    <button class="btn-vote-main" onclick="goStep(3)" style="display:flex;align-items:center;gap:12px;font-size:1.1rem;">
-      ⚽ Ir a votar
-    </button>
+  <div class="join-body">
+    <a class="join-card jc-wa" href="https://chat.whatsapp.com/BoaqXwjmrjsEPLkzYY3bLI?mode=gi_t" target="_blank" onclick="markJoin('wa')">
+      <span class="jc-icon">💬</span>
+      <div class="jc-info">
+        <div class="jc-title">Grupo de WhatsApp</div>
+        <div class="jc-sub">Recibe los partidos, vota y entérate del ganador</div>
+      </div>
+      <span class="jc-arrow">→</span>
+    </a>
+
+    <a class="join-card jc-ig" href="https://www.instagram.com/lacatedralcuba?igsh=MW9mZnpmdDhjN2Nn" target="_blank" onclick="markJoin('ig')">
+      <span class="jc-icon">📸</span>
+      <div class="jc-info">
+        <div class="jc-title">Instagram</div>
+        <div class="jc-sub">@lacatedralcuba · Novedades, fotos y sorteos en directo</div>
+      </div>
+      <span class="jc-arrow">→</span>
+    </a>
+
+    <!-- Check status -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="check-row" id="check-wa">
+        <div class="check-icon" id="icon-wa"></div>
+        <span class="check-label" id="label-wa">Unirme al grupo de WhatsApp</span>
+      </div>
+      <div class="check-row" id="check-ig">
+        <div class="check-icon" id="icon-ig"></div>
+        <span class="check-label" id="label-ig">Seguir en Instagram</span>
+      </div>
+    </div>
   </div>
 
-  <button class="btn-continue" id="btnContinue" onclick="goStep(4)">Continuar a votar →</button>
+  <button class="btn-vote-main" id="btnContinue" onclick="goStep(3)" style="display:flex;align-items:center;justify-content:center;gap:12px;">
+    ⚽ Ir a votar
+  </button>
   <p class="skip-link" onclick="goStep(4)">Ya soy miembro, saltar este paso</p>
 </div>
 
