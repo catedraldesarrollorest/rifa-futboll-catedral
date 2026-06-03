@@ -388,6 +388,11 @@ body {
   <!-- STATS -->
   <div class="dash-grid">
     <div class="card">
+      <h3>⏱️ Tiempo para cierre</h3>
+      <div class="number" id="countdownTimer">--:--</div>
+      <div class="sub" id="countdownStatus">cargando...</div>
+    </div>
+    <div class="card">
       <h3>Total de votos</h3>
       <div class="number" id="totalVotes">0</div>
       <div class="sub">participantes</div>
@@ -684,6 +689,67 @@ async function loadVotes() {
     console.error('Error cargando votos:', err);
   }
 }
+
+function updateCountdown() {
+  const matchDateEl = document.getElementById('countdownTimer');
+  const statusEl = document.getElementById('countdownStatus');
+
+  try {
+    // Obtener match_date de Supabase (o usar del CONFIG)
+    const now = new Date();
+
+    // Función auxiliar para calcular tiempo hasta el partido
+    async function getMatchDate() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/rifa_config?id=eq.1&select=match_date`, {
+          headers: { 'apikey': SUPABASE_KEY }
+        });
+        const data = await res.json();
+        if (data && data.length > 0 && data[0].match_date) {
+          return new Date(data[0].match_date);
+        }
+      } catch(e) {
+        console.log('No se pudo obtener match_date');
+      }
+      return null;
+    }
+
+    getMatchDate().then(matchDate => {
+      if (!matchDate) {
+        matchDateEl.textContent = 'N/A';
+        statusEl.textContent = 'sin fecha';
+        return;
+      }
+
+      const updateTimer = () => {
+        const now = new Date();
+        const diff = matchDate - now;
+
+        if (diff <= 0) {
+          matchDateEl.textContent = '✓';
+          statusEl.textContent = 'partido en vivo';
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        matchDateEl.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        statusEl.textContent = `${seconds}s`;
+      };
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+    });
+  } catch (err) {
+    console.error('Error en countdown:', err);
+    matchDateEl.textContent = 'Error';
+  }
+}
+
+// Actualizar contador cuando se carga la página
+updateCountdown();
 
 function updateWinners() {
   const result = document.getElementById('matchResult').value;
