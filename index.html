@@ -1081,12 +1081,14 @@ async function loadRifaConfigFromSupabase() {
         document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
         document.getElementById('tkt-prize').textContent = CONFIG.prize;
 
+        updateVotingButtonStatus();
         return true;
       }
     }
   } catch (err) {
     console.log('⚠️ No se pudo cargar config de Supabase, usando valores por defecto:', err);
   }
+  updateVotingButtonStatus();
   return false;
 }
 
@@ -1120,7 +1122,6 @@ function updateVotingButtonStatus() {
 
 // Cargar configuración cuando la página inicia
 loadRifaConfigFromSupabase();
-updateVotingButtonStatus();
 
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
