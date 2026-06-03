@@ -124,6 +124,9 @@ body::before {
   animation: pulse-ring 3s infinite;
   cursor: pointer;
   transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 @media (hover: hover) and (pointer: fine) {
   .vote-ball:hover {
@@ -132,7 +135,6 @@ body::before {
   }
 }
 .vote-ball:active { transform: scale(0.95); }
-.vote-ball img { height: 100px; width: auto; }
 
 .tagline-top {
   font-size: 0.7rem;
@@ -894,8 +896,8 @@ h1.main-title span { color: var(--oro); }
     </div>
 
     <!-- Vote Ball Button -->
-    <button class="vote-ball" onclick="goStep(3)" style="border:none;background:transparent;">
-      <img src="logo.png" alt="Ir a votar">
+    <button class="vote-ball" onclick="goStep(3)" style="border:none;background:transparent;font-size:80px;">
+      ⚽
     </button>
   </div>
   <p class="skip-link" onclick="goStep(4)">Ya soy miembro, saltar este paso</p>
