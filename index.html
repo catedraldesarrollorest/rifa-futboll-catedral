@@ -1152,6 +1152,19 @@ async function loadRifaConfigFromSupabase() {
 // Cargar configuración cuando la página inicia
 loadRifaConfigFromSupabase();
 
+// Escuchar cambios en otras pestañas (cuando admin crea nueva rifa)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'rifa_updated_at') {
+    console.log('🔄 Detección: Nueva rifa creada en otra pestaña. Recargando configuración...');
+    // Actualizar CONFIG desde Supabase
+    updateConfigFromStorage();
+    // También intentar recargar desde Supabase
+    loadRifaConfigFromSupabase().catch(err => {
+      console.log('⚠️ No se pudo recargar desde Supabase, usando localStorage');
+    });
+  }
+});
+
 // ── LOGIN FUNCTIONS ────────────────────────────────────────────
 function showLogin() {
   document.getElementById('loginModal').classList.add('active');

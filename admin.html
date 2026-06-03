@@ -936,6 +936,9 @@ async function saveNewRifa() {
     localStorage.setItem('config_date', dateStr);
     localStorage.setItem('config_prize', prize);
 
+    // Notificar a todas las pestañas que se actualizó la rifa
+    localStorage.setItem('rifa_updated_at', new Date().toISOString());
+
     // 4️⃣ RECARGAR VOTOS (DEBERÍA ESTAR VACÍO)
     console.log('🔄 Recargando interfaz...');
     loadVotes();
