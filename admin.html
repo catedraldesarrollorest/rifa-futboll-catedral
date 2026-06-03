@@ -529,7 +529,17 @@ async function handleAdminLogin(e) {
   loginError.style.display = 'none';
   sessionStorage.setItem('adminLogged', 'true');
   showDashboard();
-  await loadVotes();
+
+  try {
+    await loadVotes();
+  } catch (err) {
+    console.error('❌ Error cargando votos:', err.message);
+    const dashboard = document.getElementById('dashboard');
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'padding: 20px; background: #fee; border: 1px solid #f00; color: #333; margin: 20px; border-radius: 8px; font-family: monospace; font-size: 13px;';
+    errorDiv.innerHTML = `<strong>❌ Error cargando datos:</strong><br>${err.message}<br><br>Revisa la consola del navegador para más detalles.`;
+    dashboard.prepend(errorDiv);
+  }
 }
 
 function logout() {
@@ -566,20 +576,29 @@ async function getConfig() {
     }
 
     const data = await res.json();
-    if (data && data.length > 0) {
-      const config = data[0];
-      console.log('✅ Config cargada de Supabase:', config);
-      return {
-        team1: config.team1 || 'España',
-        team2: config.team2 || 'Argentina',
-        flag1: config.flag1 || '🇪🇸',
-        flag2: config.flag2 || '🇦🇷',
-        date: config.match_date || '',
-        prize: config.prize || '$50 en consumo'
-      };
+    console.log('📊 Respuesta de Supabase rifa_config:', data);
+
+    if (!data || !Array.isArray(data)) {
+      throw new Error(`Respuesta inválida de Supabase: esperaba array, recibí ${typeof data}`);
     }
+
+    if (data.length === 0) {
+      throw new Error('❌ La tabla rifa_config está vacía - Por favor, crea una configuración en Supabase');
+    }
+
+    const config = data[0];
+    console.log('✅ Config cargada de Supabase:', config);
+    return {
+      team1: config.team1 || 'España',
+      team2: config.team2 || 'Argentina',
+      flag1: config.flag1 || '🇪🇸',
+      flag2: config.flag2 || '🇦🇷',
+      date: config.match_date || '',
+      prize: config.prize || '$50 en consumo'
+    };
   } catch (err) {
-    console.error('❌ Error cargando config de Supabase:', err.message, err);
+    console.error('❌ Error cargando config de Supabase:', err.message);
+    console.error('Stack:', err);
     throw err;
   }
 }

@@ -1101,41 +1101,50 @@ async function loadRifaConfigFromSupabase() {
     }
 
     const data = await res.json();
-    if (data && data.length > 0) {
-      const config = data[0];
-      CONFIG.team1 = config.team1 || 'España';
-      CONFIG.team2 = config.team2 || 'Argentina';
-      CONFIG.flag1 = config.flag1 || '🇪🇸';
-      CONFIG.flag2 = config.flag2 || '🇦🇷';
-      CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
-      CONFIG.prize = config.prize || '$50 en consumo';
+    console.log('📊 Respuesta de Supabase rifa_config:', data);
 
-      console.log('✅ Configuración cargada de Supabase:', CONFIG);
-
-      // Actualizar UI con la nueva configuración
-      document.getElementById('s1team1').textContent = CONFIG.team1;
-      document.getElementById('s1team2').textContent = CONFIG.team2;
-      document.getElementById('s1flag1').textContent = CONFIG.flag1;
-      document.getElementById('s1flag2').textContent = CONFIG.flag2;
-      document.getElementById('s1prize').textContent = CONFIG.prize;
-
-      document.getElementById('tname1').textContent = CONFIG.team1;
-      document.getElementById('tname2').textContent = CONFIG.team2;
-      document.getElementById('flag1').textContent  = CONFIG.flag1;
-      document.getElementById('flag2').textContent  = CONFIG.flag2;
-
-      document.getElementById('vb-t1').textContent   = CONFIG.team1;
-      document.getElementById('vb-t2').textContent   = CONFIG.team2;
-      document.getElementById('vb-flag1').textContent = CONFIG.flag1;
-      document.getElementById('vb-flag2').textContent = CONFIG.flag2;
-
-      document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
-      document.getElementById('tkt-prize').textContent = CONFIG.prize;
-
-      return true;
+    if (!data || !Array.isArray(data)) {
+      throw new Error(`Respuesta inválida de Supabase: esperaba array, recibí ${typeof data}`);
     }
+
+    if (data.length === 0) {
+      throw new Error('La tabla rifa_config está vacía - no hay configuración para mostrar');
+    }
+
+    const config = data[0];
+    CONFIG.team1 = config.team1 || 'España';
+    CONFIG.team2 = config.team2 || 'Argentina';
+    CONFIG.flag1 = config.flag1 || '🇪🇸';
+    CONFIG.flag2 = config.flag2 || '🇦🇷';
+    CONFIG.date = config.match_date ? new Date(config.match_date).toLocaleString('es-ES', {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
+    CONFIG.prize = config.prize || '$50 en consumo';
+
+    console.log('✅ Configuración cargada de Supabase:', CONFIG);
+
+    // Actualizar UI con la nueva configuración
+    document.getElementById('s1team1').textContent = CONFIG.team1;
+    document.getElementById('s1team2').textContent = CONFIG.team2;
+    document.getElementById('s1flag1').textContent = CONFIG.flag1;
+    document.getElementById('s1flag2').textContent = CONFIG.flag2;
+    document.getElementById('s1prize').textContent = CONFIG.prize;
+
+    document.getElementById('tname1').textContent = CONFIG.team1;
+    document.getElementById('tname2').textContent = CONFIG.team2;
+    document.getElementById('flag1').textContent  = CONFIG.flag1;
+    document.getElementById('flag2').textContent  = CONFIG.flag2;
+
+    document.getElementById('vb-t1').textContent   = CONFIG.team1;
+    document.getElementById('vb-t2').textContent   = CONFIG.team2;
+    document.getElementById('vb-flag1').textContent = CONFIG.flag1;
+    document.getElementById('vb-flag2').textContent = CONFIG.flag2;
+
+    document.getElementById('tkt-match').textContent = `${CONFIG.team1} vs ${CONFIG.team2}`;
+    document.getElementById('tkt-prize').textContent = CONFIG.prize;
+
+    return true;
   } catch (err) {
-    console.error('❌ Error cargando config de Supabase:', err.message, err);
+    console.error('❌ Error cargando config de Supabase:', err.message);
+    console.error('Stack:', err);
     throw err;
   }
   return false;
